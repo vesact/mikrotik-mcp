@@ -71,7 +71,7 @@ async function executeAll(
   const results = await Promise.allSettled(credentials.map((cred) => callback(cred, deps)));
 
   return results.map((result, i) => {
-    const cred = credentials[i]!;
+    const cred = credentials[i];
     if (result.status === 'fulfilled') {
       return { deviceId: cred.deviceId, success: true, data: result.value };
     }

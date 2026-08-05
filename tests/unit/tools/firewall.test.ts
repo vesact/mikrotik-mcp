@@ -177,7 +177,7 @@ describe('registerFirewallTools', () => {
         }
       )._registeredTools;
       mockFanOut.mockResolvedValue([]);
-      const result = await tools[toolName]!.handler({ target: 'R1' }, {});
+      const result = await tools[toolName].handler({ target: 'R1' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
       expect(result).toHaveProperty('content');
       vi.clearAllMocks();

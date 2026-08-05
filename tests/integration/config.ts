@@ -51,8 +51,8 @@ export function loadTestConfig(): TestConfig {
     });
   }
 
-  const tags = (process.env['TEST_TAGS'] ?? '').split(',').filter(Boolean);
-  const timeoutMs = parseInt(process.env['TEST_TIMEOUT_MS'] ?? '15000', 10);
+  const tags = (process.env.TEST_TAGS ?? '').split(',').filter(Boolean);
+  const timeoutMs = parseInt(process.env.TEST_TIMEOUT_MS ?? '15000', 10);
 
   return { devices, tags, timeoutMs };
 }

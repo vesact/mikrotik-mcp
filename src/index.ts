@@ -18,9 +18,9 @@ import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { createServer } from './server.js';
 
-const transportType = process.env['MCP_TRANSPORT'] ?? 'stdio';
-const httpPort = parseInt(process.env['MCP_HTTP_PORT'] ?? '3000', 10);
-const httpHost = process.env['MCP_HOST'] ?? '0.0.0.0';
+const transportType = process.env.MCP_TRANSPORT ?? 'stdio';
+const httpPort = parseInt(process.env.MCP_HTTP_PORT ?? '3000', 10);
+const httpHost = process.env.MCP_HOST ?? '0.0.0.0';
 
 /** Active transports keyed by session ID */
 const transports: Record<string, StreamableHTTPServerTransport | SSEServerTransport> = {};
@@ -124,7 +124,7 @@ async function main(): Promise<void> {
     process.stderr.write('[mikrotik-mcp] Shutting down...\n');
     for (const sid of Object.keys(transports)) {
       try {
-        await transports[sid]!.close();
+        await transports[sid].close();
       } catch {
         /* best effort */
       }
@@ -143,7 +143,7 @@ async function handleStreamableHttp(req: IncomingMessage, res: ServerResponse): 
   let transport: StreamableHTTPServerTransport | undefined;
 
   if (sessionId && transports[sessionId]) {
-    const existing = transports[sessionId]!;
+    const existing = transports[sessionId];
     if (!(existing instanceof StreamableHTTPServerTransport)) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(
@@ -160,17 +160,19 @@ async function handleStreamableHttp(req: IncomingMessage, res: ServerResponse): 
     // Must parse body to check if it's an initialize request
     const body = await parseJsonBody(req);
     if (isInitializeRequest(body)) {
-      transport = new StreamableHTTPServerTransport({
+      // Bound to a const so the closures below see a non-optional transport.
+      const created = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
         onsessioninitialized: (sid) => {
           process.stderr.write(`[mikrotik-mcp] StreamableHTTP session: ${sid}\n`);
-          transports[sid] = transport!;
+          transports[sid] = created;
         },
       });
-      transport.onclose = () => {
-        const sid = transport!.sessionId;
+      created.onclose = () => {
+        const sid = created.sessionId;
         if (sid) delete transports[sid];
       };
+      transport = created;
       const server = await createServer();
       await server.connect(transport);
       await transport.handleRequest(req, res, body);
@@ -231,7 +233,7 @@ async function handleSseMessage(
     res.end('Invalid or missing sessionId');
     return;
   }
-  const existing = transports[sessionId]!;
+  const existing = transports[sessionId];
   if (!(existing instanceof SSEServerTransport)) {
     res.writeHead(400);
     res.end('Session uses a different transport');

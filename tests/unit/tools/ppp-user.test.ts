@@ -64,7 +64,7 @@ describe('parsePppActive', () => {
 describe('parsePppAaa', () => {
   it('parses AAA config', () => {
     const raw = '                     use-radius: no \r\n                     accounting: yes\r\n';
-    expect(parsePppAaa(raw)['useRadius']).toBe(false);
+    expect(parsePppAaa(raw).useRadius).toBe(false);
   });
 });
 

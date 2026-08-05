@@ -23,13 +23,13 @@ describe('System', () => {
     const records = await transport.query(cred, '/system/identity');
     expect(records).toHaveLength(1);
     expect(records[0]).toHaveProperty('name');
-    expect(typeof records[0]!['name']).toBe('string');
+    expect(typeof records[0].name).toBe('string');
   });
 
   it('GET /system/resource returns device info', async () => {
     const records = await transport.query(cred, '/system/resource');
     expect(records).toHaveLength(1);
-    assertHasKeys(records[0]!, [
+    assertHasKeys(records[0], [
       'platform',
       'version',
       'cpu',
@@ -45,7 +45,7 @@ describe('System', () => {
   it('GET /system/clock returns time info', async () => {
     const records = await transport.query(cred, '/system/clock');
     expect(records).toHaveLength(1);
-    assertHasKeys(records[0]!, ['time', 'date']);
+    assertHasKeys(records[0], ['time', 'date']);
   });
 
   it('GET /system/health returns metrics (if supported)', async () => {
@@ -64,6 +64,6 @@ describe('Packages', () => {
   it('GET /system/package returns installed packages', async () => {
     const records = await transport.query(cred, '/system/package');
     expect(records.length).toBeGreaterThanOrEqual(1);
-    assertHasKeys(records[0]!, ['name', 'version']);
+    assertHasKeys(records[0], ['name', 'version']);
   });
 });

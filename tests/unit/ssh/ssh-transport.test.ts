@@ -229,8 +229,8 @@ describe('SshTransportImpl', () => {
         expect.any(Function),
       );
       expect(result.length).toBe(2);
-      expect(result[0]['address']).toBe('10.0.0.1/24');
-      expect(result[0]['interface']).toBe('ether1');
+      expect(result[0].address).toBe('10.0.0.1/24');
+      expect(result[0].interface).toBe('ether1');
     });
 
     it('falls back to parseKeyValue for single-record output', async () => {

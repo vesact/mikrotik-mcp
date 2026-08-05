@@ -119,9 +119,9 @@ function envFlag(value: string | undefined): boolean {
  */
 export async function createServer(): Promise<McpServer> {
   // --- Dependencies ---
-  const keepassPath = process.env['KEEPASS_PATH'] ?? '/config/keepass.kdbx';
-  const keepassPassword = process.env['KEEPASS_PASSWORD'] ?? '';
-  const keepassGroup = process.env['KEEPASS_GROUP'] ?? 'mikrotik';
+  const keepassPath = process.env.KEEPASS_PATH ?? '/config/keepass.kdbx';
+  const keepassPassword = process.env.KEEPASS_PASSWORD ?? '';
+  const keepassGroup = process.env.KEEPASS_GROUP ?? 'mikrotik';
 
   const keepass = new KeePassClientImpl(keepassPath, keepassPassword, keepassGroup);
   await keepass.open(); // fail-fast: throws on bad password / missing vault
@@ -139,20 +139,24 @@ export async function createServer(): Promise<McpServer> {
   // When enabled, wrap registerTool so only allow-listed read-only tools are
   // registered. All registration paths below (inline + registerXxxTools) flow
   // through this single choke point, so nothing else needs to change.
-  const readOnly = envFlag(process.env['READ_ONLY']);
+  const readOnly = envFlag(process.env.READ_ONLY);
   if (readOnly) {
-    const originalRegisterTool = server.registerTool.bind(server);
+    // registerTool is heavily overloaded; erase it to a single loose signature
+    // so the wrapper can forward arbitrary argument shapes through unchanged.
+    type LooseRegisterTool = (name: string, ...rest: unknown[]) => unknown;
+    const originalRegisterTool = server.registerTool.bind(server) as unknown as LooseRegisterTool;
     const skipped: string[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (server as any).registerTool = (name: string, ...rest: unknown[]): unknown => {
+    (server as unknown as { registerTool: LooseRegisterTool }).registerTool = (
+      name,
+      ...rest
+    ): unknown => {
       if (!READ_ONLY_TOOLS.has(name)) {
         skipped.push(name);
         // Return a stub matching registerTool's RegisteredTool shape closely
         // enough for callers that ignore the return value (all of ours do).
         return undefined;
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (originalRegisterTool as any)(name, ...rest);
+      return originalRegisterTool(name, ...rest);
     };
     process.stderr.write(
       `[mikrotik-mcp] READ_ONLY mode ENABLED — exposing ${READ_ONLY_TOOLS.size} read-only tools; ` +

@@ -68,13 +68,13 @@ export function parseInterfaceStats(raw: string): Array<{
     const regex = new RegExp(`${field}=(\\d[\\d ]*)`);
     const match = regex.exec(text);
     if (!match) return '0';
-    return match[1]!.replace(/ /g, '');
+    return match[1].replace(/ /g, '');
   };
 
   const extractQuotedField = (text: string, field: string): string => {
     const regex = new RegExp(`${field}="([^"]*)"`);
     const match = regex.exec(text);
-    return match ? match[1]! : '';
+    return match ? match[1] : '';
   };
 
   // Split on blank lines (records are separated by empty lines)

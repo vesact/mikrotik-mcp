@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Exercise the optional port-relocation path of setup-new-device.
-process.env['ROUTEROS_SETUP_PORT'] = '8080';
+process.env.ROUTEROS_SETUP_PORT = '8080';
 
 // --- Hoisted mock fns (available inside vi.mock factories) ---
 
@@ -64,7 +64,7 @@ function getHandler(
       >;
     }
   )._registeredTools;
-  return tools['setup-new-device']!.handler;
+  return tools['setup-new-device'].handler;
 }
 
 function setupHappyPath(): void {
@@ -150,7 +150,7 @@ describe('registerSetupTools', () => {
       setupHappyPath();
 
       const result = await handler({ ip: '192.0.2.95', identity: 'chr-95' }, {});
-      const parsed = JSON.parse(result.content[0]!.text);
+      const parsed = JSON.parse(result.content[0].text);
 
       expect(parsed).toEqual({
         success: true,
@@ -165,10 +165,10 @@ describe('registerSetupTools', () => {
       setupHappyPath();
 
       const result = await handler({ ip: '192.0.2.95', identity: 'chr-95' }, {});
-      const responseText = result.content[0]!.text;
+      const responseText = result.content[0].text;
 
       // Grab the password that was passed to KeePass
-      const createCall = mockCreateEntry.mock.calls[0]![0] as { password: string };
+      const createCall = mockCreateEntry.mock.calls[0][0] as { password: string };
       const password = createCall.password;
 
       expect(password).toMatch(/^[a-zA-Z0-9]{40}$/);
@@ -246,7 +246,7 @@ describe('registerSetupTools', () => {
 
       // Last query on target port = verification with new password
       const calls = mockTargetQuery.mock.calls;
-      const verifyCred = calls[calls.length - 1]![0] as { password: string };
+      const verifyCred = calls[calls.length - 1][0] as { password: string };
       expect(verifyCred.password).toMatch(/^[a-zA-Z0-9]{40}$/);
       expect(verifyCred.password).not.toBe('');
     });
@@ -260,7 +260,7 @@ describe('registerSetupTools', () => {
       mockPort80Query.mockRejectedValueOnce(new Error('Connection refused'));
 
       const result = await handler({ ip: '192.0.2.95', identity: 'chr-95' }, {});
-      const parsed = JSON.parse(result.content[0]!.text);
+      const parsed = JSON.parse(result.content[0].text);
 
       expect(parsed).toEqual({
         success: false,
@@ -282,7 +282,7 @@ describe('registerSetupTools', () => {
       mockPort80Execute.mockRejectedValueOnce(new Error('timeout'));
 
       const result = await handler({ ip: '192.0.2.95', identity: 'chr-95' }, {});
-      const parsed = JSON.parse(result.content[0]!.text);
+      const parsed = JSON.parse(result.content[0].text);
 
       expect(parsed.success).toBe(false);
       expect(parsed.stage).toBe('identity');
@@ -298,7 +298,7 @@ describe('registerSetupTools', () => {
       mockPort80Query.mockResolvedValueOnce([{ '.id': '*1', name: 'telnet', port: '23' }]); // step 4a — no www entry
 
       const result = await handler({ ip: '192.0.2.95', identity: 'chr-95' }, {});
-      const parsed = JSON.parse(result.content[0]!.text);
+      const parsed = JSON.parse(result.content[0].text);
 
       expect(parsed.success).toBe(false);
       expect(parsed.stage).toBe('port-change');
@@ -327,7 +327,7 @@ describe('registerSetupTools', () => {
       mockTargetQuery.mockResolvedValueOnce([{ name: 'chr-95' }]);
 
       const result = await handler({ ip: '192.0.2.95', identity: 'chr-95' }, {});
-      const parsed = JSON.parse(result.content[0]!.text);
+      const parsed = JSON.parse(result.content[0].text);
 
       expect(parsed.success).toBe(true);
     });
@@ -344,7 +344,7 @@ describe('registerSetupTools', () => {
       mockTargetQuery.mockResolvedValueOnce([{ '.id': '*2', name: 'guest' }]);
 
       const result = await handler({ ip: '192.0.2.95', identity: 'chr-95' }, {});
-      const parsed = JSON.parse(result.content[0]!.text);
+      const parsed = JSON.parse(result.content[0].text);
 
       expect(parsed.success).toBe(false);
       expect(parsed.stage).toBe('password');
@@ -366,7 +366,7 @@ describe('registerSetupTools', () => {
       mockCreateEntry.mockRejectedValueOnce(new Error('Vault write failed'));
 
       const result = await handler({ ip: '192.0.2.95', identity: 'chr-95' }, {});
-      const parsed = JSON.parse(result.content[0]!.text);
+      const parsed = JSON.parse(result.content[0].text);
 
       expect(parsed.success).toBe(false);
       expect(parsed.stage).toBe('keepass');
@@ -388,7 +388,7 @@ describe('registerSetupTools', () => {
       mockTargetQuery.mockRejectedValueOnce(new Error('Auth failed'));
 
       const result = await handler({ ip: '192.0.2.95', identity: 'chr-95' }, {});
-      const parsed = JSON.parse(result.content[0]!.text);
+      const parsed = JSON.parse(result.content[0].text);
 
       expect(parsed.success).toBe(false);
       expect(parsed.stage).toBe('verify');
@@ -415,7 +415,7 @@ describe('registerSetupTools', () => {
       });
 
       const result = await handler({ ip: '192.0.2.95', identity: 'chr-95' }, {});
-      const responseText = result.content[0]!.text;
+      const responseText = result.content[0].text;
       const parsed = JSON.parse(responseText);
 
       // Password must have been sanitized to [REDACTED]
@@ -431,7 +431,7 @@ describe('registerSetupTools', () => {
 
       await handler({ ip: '192.0.2.95', identity: 'chr-95' }, {});
 
-      const cred = mockPort80Query.mock.calls[0]![0] as { username: string; password: string };
+      const cred = mockPort80Query.mock.calls[0][0] as { username: string; password: string };
       expect(cred.username).toBe('admin');
       expect(cred.password).toBe('');
     });

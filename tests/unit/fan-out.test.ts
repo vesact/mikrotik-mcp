@@ -215,7 +215,7 @@ describe('fanOut', () => {
 
       for (const result of results) {
         if (!result.success && result.error) {
-          const cred = allDevices.find((d) => d.deviceId === result.deviceId)!;
+          const cred = allDevices.find((d) => d.deviceId === result.deviceId);
           expect(result.error).not.toContain(cred.password);
           expect(result.error).not.toContain(cred.username);
         }

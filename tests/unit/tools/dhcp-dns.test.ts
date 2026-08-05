@@ -77,7 +77,7 @@ describe('parseDns', () => {
     const raw =
       '                      servers:        \r\n        allow-remote-requests: no     \r\n';
     const result = parseDns(raw);
-    expect(result['allowRemoteRequests']).toBe(false);
+    expect(result.allowRemoteRequests).toBe(false);
   });
 });
 
@@ -133,7 +133,7 @@ describe('registerDhcpDnsTools', () => {
         }
       )._registeredTools;
       mockFanOut.mockResolvedValue([]);
-      const result = await tools[toolName]!.handler({ target: 'R1' }, {});
+      const result = await tools[toolName].handler({ target: 'R1' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
       expect(result).toHaveProperty('content');
       vi.clearAllMocks();

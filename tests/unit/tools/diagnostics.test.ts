@@ -113,7 +113,7 @@ describe('registerDiagnosticTools', () => {
         }
       )._registeredTools;
       mockFanOut.mockResolvedValue([]);
-      const result = await tools[toolName]!.handler({ target: 'R1', address: '8.8.8.8' }, {});
+      const result = await tools[toolName].handler({ target: 'R1', address: '8.8.8.8' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
       expect(result).toHaveProperty('content');
       vi.clearAllMocks();

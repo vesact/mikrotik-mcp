@@ -21,13 +21,13 @@ describe('Interfaces', () => {
   it('GET /interface returns interface list', async () => {
     const records = await transport.query(cred, '/interface');
     expect(records.length).toBeGreaterThanOrEqual(1);
-    assertHasKeys(records[0]!, ['name', 'type']);
+    assertHasKeys(records[0], ['name', 'type']);
   });
 
   it('GET /interface/ethernet returns ethernet interfaces', async () => {
     const records = await transport.query(cred, '/interface/ethernet');
     expect(records.length).toBeGreaterThanOrEqual(1);
-    assertHasKeys(records[0]!, ['name', 'default-name']);
+    assertHasKeys(records[0], ['name', 'default-name']);
   });
 });
 
@@ -48,7 +48,7 @@ describe('IP Addresses', () => {
   it('GET /ip/address returns at least one address', async () => {
     const records = await transport.query(cred, '/ip/address');
     expect(records.length).toBeGreaterThanOrEqual(1);
-    assertHasKeys(records[0]!, ['address', 'interface', 'network']);
+    assertHasKeys(records[0], ['address', 'interface', 'network']);
   });
 });
 
@@ -63,7 +63,7 @@ describe('Routes', () => {
   it('GET /ip/route returns routing table', async () => {
     const records = await transport.query(cred, '/ip/route');
     expect(records.length).toBeGreaterThanOrEqual(1);
-    assertHasKeys(records[0]!, ['dst-address']);
+    assertHasKeys(records[0], ['dst-address']);
   });
 });
 

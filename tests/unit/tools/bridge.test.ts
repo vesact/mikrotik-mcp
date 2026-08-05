@@ -164,7 +164,7 @@ describe('registerBridgeTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools[toolName]!.handler;
+      const handler = tools[toolName].handler;
       mockFanOut.mockResolvedValue([]);
       const result = await handler({ target: 'R1' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();

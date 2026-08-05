@@ -69,7 +69,7 @@ describe('registerCertificateTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['system-certificates-list']!.handler;
+      const handler = tools['system-certificates-list'].handler;
       mockFanOut.mockResolvedValue([]);
       const result = await handler({ target: 'R1' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();

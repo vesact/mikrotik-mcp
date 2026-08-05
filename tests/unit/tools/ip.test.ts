@@ -112,8 +112,8 @@ describe('parseIpSettings', () => {
     const raw =
       '                                 ip-forward: yes          \r\n                             send-redirects: yes          \r\n';
     const result = parseIpSettings(raw);
-    expect(result['ipForward']).toBe(true);
-    expect(result['sendRedirects']).toBe(true);
+    expect(result.ipForward).toBe(true);
+    expect(result.sendRedirects).toBe(true);
   });
 });
 
@@ -164,7 +164,7 @@ describe('registerIpTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools[toolName]!.handler;
+      const handler = tools[toolName].handler;
       mockFanOut.mockResolvedValue([]);
       const result = await handler({ target: 'R1' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();

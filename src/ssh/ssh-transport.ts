@@ -129,7 +129,7 @@ export class SshTransportImpl implements SshTransport {
   }
 
   async query(credential: KeePassCredential, path: string): Promise<RosRecord[]> {
-    const command = path + '/print detail';
+    const command = `${path}/print detail`;
     const raw = await this.executeCommand(credential, command);
     const records = parseDetailRecords(raw);
     if (records.length > 0) return records;
@@ -153,7 +153,7 @@ export class SshTransportImpl implements SshTransport {
         if (v.includes(' ')) return `${k}="${v}"`;
         return `${k}=${v}`;
       });
-      command += ' ' + parts.join(' ');
+      command += ` ${parts.join(' ')}`;
     }
     const result = await this.executeCommand(credential, command);
     return result || undefined;
@@ -170,7 +170,7 @@ export class SshTransportImpl implements SshTransport {
         if (v.includes(' ')) return `${k}="${v}"`;
         return `${k}=${v}`;
       });
-      fullCommand += ' ' + parts.join(' ');
+      fullCommand += ` ${parts.join(' ')}`;
     }
     return this.executeCommand(credential, fullCommand);
   }

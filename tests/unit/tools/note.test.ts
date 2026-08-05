@@ -85,7 +85,7 @@ describe('registerNoteTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['system-note-get']!.handler;
+      const handler = tools['system-note-get'].handler;
       mockFanOut.mockResolvedValue([]);
       const result = await handler({ target: 'R1' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
@@ -101,11 +101,11 @@ describe('registerNoteTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['system-lcd-get']!.handler;
+      const handler = tools['system-lcd-get'].handler;
       mockFanOut.mockResolvedValue([]);
       await handler({ target: 'all' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
-      const [, target] = mockFanOut.mock.calls[0]!;
+      const [, target] = mockFanOut.mock.calls[0];
       expect(target).toBe('all');
     });
   });

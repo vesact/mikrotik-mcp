@@ -71,9 +71,9 @@ describe('normalizeRecord', () => {
   it('redacts sensitive fields', () => {
     const input = { name: 'user1', password: 'secret123', secret: 'mysecret' };
     const result = normalizeRecord(input);
-    expect(result['password']).toBe('[REDACTED]');
-    expect(result['secret']).toBe('[REDACTED]');
-    expect(result['name']).toBe('user1');
+    expect(result.password).toBe('[REDACTED]');
+    expect(result.secret).toBe('[REDACTED]');
+    expect(result.name).toBe('user1');
   });
 
   it('converts empty values to null', () => {

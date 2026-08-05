@@ -42,7 +42,7 @@ describe('parseLog', () => {
     const raw = 'some header\n 2025-01-15 14:35:18 system,info test\n\n';
     const result = parseLog(raw);
     expect(result).toHaveLength(1);
-    expect(result[0]!.message).toBe('test');
+    expect(result[0].message).toBe('test');
   });
 
   it('parses log output without year prefix (MM-DD format)', () => {
@@ -64,8 +64,8 @@ describe('parseLog', () => {
       ' 2025-01-15 16:42:41 system,error,critical login failure for user admin from AA:BB:CC:DD:EE:01 via winbox\r\n';
     const result = parseLog(raw);
     expect(result).toHaveLength(1);
-    expect(result[0]!.topics).toBe('system,error,critical');
-    expect(result[0]!.message).toBe(
+    expect(result[0].topics).toBe('system,error,critical');
+    expect(result[0].message).toBe(
       'login failure for user admin from AA:BB:CC:DD:EE:01 via winbox',
     );
   });
@@ -83,8 +83,8 @@ describe('parseFiles', () => {
       size: '25.2KiB',
       lastModified: '1970-01-01',
     });
-    expect(result[1]!.name).toBe('skins');
-    expect(result[1]!.type).toBe('directory');
+    expect(result[1].name).toBe('skins');
+    expect(result[1].type).toBe('directory');
   });
 
   it('returns empty array for empty output', () => {
@@ -121,7 +121,7 @@ describe('registerLogTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['log-get']!.handler;
+      const handler = tools['log-get'].handler;
       mockFanOut.mockResolvedValue([]);
       const result = await handler({ target: 'R1' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
@@ -137,11 +137,11 @@ describe('registerLogTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['files-list']!.handler;
+      const handler = tools['files-list'].handler;
       mockFanOut.mockResolvedValue([]);
       await handler({ target: 'all' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
-      const [, target] = mockFanOut.mock.calls[0]!;
+      const [, target] = mockFanOut.mock.calls[0];
       expect(target).toBe('all');
     });
   });
