@@ -1,5 +1,5 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { KeePassClient, DeviceTransport } from '../../../src/types/index.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DeviceTransport, KeePassClient } from '../../../src/types/index.js';
 
 const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() => ({
   mockListDevices: vi.fn(),
@@ -10,18 +10,18 @@ const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() =>
 
 vi.mock('../../../src/fan-out.js', () => ({ fanOut: mockFanOut }));
 
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
+  parseLogging,
+  parsePppAaa,
+  parsePppActive,
   parsePppProfiles,
   parsePppSecrets,
-  parsePppActive,
-  parsePppAaa,
-  parseUsers,
   parseScheduler,
-  parseLogging,
   parseScripts,
+  parseUsers,
   registerPppUserTools,
 } from '../../../src/tools/ppp-user.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 describe('parsePppProfiles', () => {
   it('returns empty for no profiles', () => {
@@ -64,7 +64,7 @@ describe('parsePppActive', () => {
 describe('parsePppAaa', () => {
   it('parses AAA config', () => {
     const raw = '                     use-radius: no \r\n                     accounting: yes\r\n';
-    expect(parsePppAaa(raw)['useRadius']).toBe(false);
+    expect(parsePppAaa(raw).useRadius).toBe(false);
   });
 });
 

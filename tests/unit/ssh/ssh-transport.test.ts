@@ -1,8 +1,8 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SshTransportImpl, type SshTransportOptions } from '../../../src/ssh/ssh-transport.js';
-import { SshError, SshTimeoutError, SshHostKeyError } from '../../../src/types/index.js';
 import type { KeePassCredential } from '../../../src/types/index.js';
+import { SshError, SshHostKeyError, SshTimeoutError } from '../../../src/types/index.js';
 
 // --- Mock helpers ---
 
@@ -229,8 +229,8 @@ describe('SshTransportImpl', () => {
         expect.any(Function),
       );
       expect(result.length).toBe(2);
-      expect(result[0]['address']).toBe('10.0.0.1/24');
-      expect(result[0]['interface']).toBe('ether1');
+      expect(result[0].address).toBe('10.0.0.1/24');
+      expect(result[0].interface).toBe('ether1');
     });
 
     it('falls back to parseKeyValue for single-record output', async () => {

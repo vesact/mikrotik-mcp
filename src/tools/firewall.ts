@@ -2,12 +2,13 @@
  * Firewall & Security tools — filter, NAT, mangle, address-list, connections, services, RADIUS.
  * RouterOS sections: /ip/firewall/*, /ip/service, /radius
  */
+
+import { randomUUID } from 'node:crypto';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { randomUUID } from 'node:crypto';
 import { fanOut } from '../fan-out.js';
-import type { KeePassClient, DeviceTransport, ToolDeps } from '../types/index.js';
-import { parseDetailRecords, parseTabularRecords, normalizeRecord } from '../parsers.js';
+import { normalizeRecord, parseDetailRecords, parseTabularRecords } from '../parsers.js';
+import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Parsers — universal normalizeRecord passes ALL fields through

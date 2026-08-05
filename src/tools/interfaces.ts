@@ -2,12 +2,13 @@
  * Interface tools — list, statistics, enable/disable, list membership.
  * RouterOS section: /interface
  */
+
+import { randomUUID } from 'node:crypto';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { randomUUID } from 'node:crypto';
 import { fanOut } from '../fan-out.js';
-import type { KeePassClient, DeviceTransport, ToolDeps } from '../types/index.js';
-import { parseDetailRecords, normalizeRecord } from '../parsers.js';
+import { normalizeRecord, parseDetailRecords } from '../parsers.js';
+import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Parsers
@@ -68,13 +69,13 @@ export function parseInterfaceStats(raw: string): Array<{
     const regex = new RegExp(`${field}=(\\d[\\d ]*)`);
     const match = regex.exec(text);
     if (!match) return '0';
-    return match[1]!.replace(/ /g, '');
+    return match[1].replace(/ /g, '');
   };
 
   const extractQuotedField = (text: string, field: string): string => {
     const regex = new RegExp(`${field}="([^"]*)"`);
     const match = regex.exec(text);
-    return match ? match[1]! : '';
+    return match ? match[1] : '';
   };
 
   // Split on blank lines (records are separated by empty lines)

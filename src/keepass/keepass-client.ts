@@ -3,9 +3,9 @@
  * This is the SOLE owner of vault access per architecture boundaries.
  */
 import { readFile, writeFile } from 'node:fs/promises';
-import kdbxweb from 'kdbxweb';
 import argon2 from 'argon2';
-import type { KeePassClient, KeePassCredential, CreateEntryParams } from '../types/index.js';
+import kdbxweb from 'kdbxweb';
+import type { CreateEntryParams, KeePassClient, KeePassCredential } from '../types/index.js';
 
 // Configure Argon2 implementation for kdbxweb (required for KDBX4 vaults)
 kdbxweb.CryptoEngine.setArgon2Impl(

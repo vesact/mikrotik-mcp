@@ -2,12 +2,13 @@
  * Log & files tools.
  * RouterOS section: /log, /file
  */
+
+import { randomUUID } from 'node:crypto';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { randomUUID } from 'node:crypto';
 import { fanOut } from '../fan-out.js';
-import type { KeePassClient, DeviceTransport, ToolDeps } from '../types/index.js';
-import { parseDetailRecords, normalizeRecord } from '../parsers.js';
+import { normalizeRecord, parseDetailRecords } from '../parsers.js';
+import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Parsers
@@ -26,11 +27,11 @@ export function parseLog(raw: string): Array<{ time: string; topics: string; mes
   for (const line of lines) {
     const match = regex.exec(line);
     if (match) {
-      const datePart = match[1] ? `${match[1]}-${match[2]}` : match[2]!;
+      const datePart = match[1] ? `${match[1]}-${match[2]}` : match[2];
       results.push({
         time: `${datePart} ${match[3]}`,
-        topics: match[4]!,
-        message: match[5]!.trim(),
+        topics: match[4],
+        message: match[5].trim(),
       });
     }
   }
@@ -69,7 +70,7 @@ export function registerLogTools(
         if (topics) {
           const pattern = topics.toLowerCase();
           return records.filter((r) => {
-            const t = (r['topics'] ?? '').toLowerCase();
+            const t = (r.topics ?? '').toLowerCase();
             return t.includes(pattern);
           });
         }

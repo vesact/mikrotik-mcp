@@ -4,7 +4,7 @@
  *
  * Architectural mandate: always use Promise.allSettled, never Promise.all.
  */
-import type { ToolDeps, KeePassCredential, DeviceResult } from './types/index.js';
+import type { DeviceResult, KeePassCredential, ToolDeps } from './types/index.js';
 
 /** Callback executed per device during fan-out. */
 export type DeviceCallback = (credential: KeePassCredential, deps: ToolDeps) => Promise<unknown>;
@@ -71,7 +71,7 @@ async function executeAll(
   const results = await Promise.allSettled(credentials.map((cred) => callback(cred, deps)));
 
   return results.map((result, i) => {
-    const cred = credentials[i]!;
+    const cred = credentials[i];
     if (result.status === 'fulfilled') {
       return { deviceId: cred.deviceId, success: true, data: result.value };
     }

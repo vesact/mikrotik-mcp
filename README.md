@@ -120,8 +120,8 @@ With `READ_ONLY=true` (also accepts `1`/`yes`/`on`), the server exposes only the
 npm ci
 npm run build          # TypeScript → dist/
 npm test               # unit tests (Vitest, no hardware needed)
-npm run lint           # ESLint
-npm run format         # Prettier
+npm run check          # lint + format check (Biome)
+npm run check:fix      # apply Biome's fixes and formatting
 npm run test:integration   # integration tests against real hardware (see .env.test.example)
 ```
 

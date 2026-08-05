@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { KeePassClient, ToolDeps } from '../../../src/types/index.js';
 
 // --- Hoisted mock fns ---
@@ -18,6 +18,7 @@ vi.mock('../../../src/fan-out.js', () => ({
 
 // --- Imports (after mocks) ---
 
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
   parseHealth,
   parseRouterboard,
@@ -25,7 +26,6 @@ import {
   registerHealthTools,
 } from '../../../src/tools/health.js';
 import { parseDetailRecords } from '../../../src/tools/system.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // --- parseDetailRecords tests ---
 
@@ -70,9 +70,9 @@ describe('parseDetailRecords', () => {
       ' 0   name=auto-before-reset.backup type=backup size=25.2KiB \r\n     last-modified=1970-01-01 \r\n\r\n';
     const records = parseDetailRecords(raw);
     expect(records).toHaveLength(1);
-    expect(records[0]!['name']).toBe('auto-before-reset.backup');
-    expect(records[0]!['type']).toBe('backup');
-    expect(records[0]!['size']).toBe('25.2KiB');
+    expect(records[0].name).toBe('auto-before-reset.backup');
+    expect(records[0].type).toBe('backup');
+    expect(records[0].size).toBe('25.2KiB');
   });
 });
 
@@ -182,7 +182,7 @@ describe('registerHealthTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['system-health-get']!.handler;
+      const handler = tools['system-health-get'].handler;
 
       mockFanOut.mockResolvedValue([
         {
@@ -195,7 +195,7 @@ describe('registerHealthTools', () => {
       const result = await handler({ target: 'Router-01' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
 
-      const [deps, target] = mockFanOut.mock.calls[0]!;
+      const [deps, target] = mockFanOut.mock.calls[0];
       expect(target).toBe('Router-01');
       expect((deps as ToolDeps).sessionId).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
@@ -213,14 +213,14 @@ describe('registerHealthTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['system-routerboot-get']!.handler;
+      const handler = tools['system-routerboot-get'].handler;
 
       mockFanOut.mockResolvedValue([{ deviceId: 'Router-01', success: true, data: {} }]);
 
       await handler({ target: 'all' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
 
-      const [, target] = mockFanOut.mock.calls[0]!;
+      const [, target] = mockFanOut.mock.calls[0];
       expect(target).toBe('all');
     });
   });
@@ -233,14 +233,14 @@ describe('registerHealthTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['system-watchdog-get']!.handler;
+      const handler = tools['system-watchdog-get'].handler;
 
       mockFanOut.mockResolvedValue([{ deviceId: 'Router-01', success: true, data: {} }]);
 
       await handler({ target: 'Router-01' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
 
-      const [, target] = mockFanOut.mock.calls[0]!;
+      const [, target] = mockFanOut.mock.calls[0];
       expect(target).toBe('Router-01');
     });
   });

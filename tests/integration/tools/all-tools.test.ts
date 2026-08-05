@@ -8,14 +8,15 @@
  * - KEEPASS_PATH, KEEPASS_PASSWORD, KEEPASS_GROUP env vars set
  * - Real device reachable via SSH
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
 import { Client as McpClient } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-const device = process.env['INTEGRATION_TEST_DEVICE'];
-const keepassPath = process.env['KEEPASS_PATH'];
-const keepassPassword = process.env['KEEPASS_PASSWORD'];
+const device = process.env.INTEGRATION_TEST_DEVICE;
+const keepassPath = process.env.KEEPASS_PATH;
+const keepassPassword = process.env.KEEPASS_PASSWORD;
 
 const shouldRun =
   device != null &&
@@ -45,7 +46,7 @@ describe.skipIf(!shouldRun)('Integration: MCP tools against real device', () => 
 
   /** Helper: call a tool and parse the JSON result */
   async function callTool(name: string, args: Record<string, string> = {}): Promise<unknown[]> {
-    const res = await client.callTool({ name, arguments: { target: device!, ...args } });
+    const res = await client.callTool({ name, arguments: { target: device, ...args } });
     if (res.isError) {
       const errText = (res.content as Array<{ text?: string }>)[0]?.text ?? 'Unknown tool error';
       throw new Error(`Tool "${name}" returned error: ${errText}`);

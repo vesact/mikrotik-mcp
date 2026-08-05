@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { KeePassClientImpl } from '../../../src/keepass/keepass-client.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

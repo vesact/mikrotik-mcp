@@ -1,5 +1,5 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { KeePassClient, DeviceTransport } from '../../../src/types/index.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DeviceTransport, KeePassClient } from '../../../src/types/index.js';
 
 const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() => ({
   mockListDevices: vi.fn(),
@@ -10,8 +10,8 @@ const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() =>
 
 vi.mock('../../../src/fan-out.js', () => ({ fanOut: mockFanOut }));
 
-import { parseNote, parseLcd, registerNoteTools } from '../../../src/tools/note.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { parseLcd, parseNote, registerNoteTools } from '../../../src/tools/note.js';
 
 describe('parseNote', () => {
   it('parses note output with full detail fields', () => {
@@ -85,7 +85,7 @@ describe('registerNoteTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['system-note-get']!.handler;
+      const handler = tools['system-note-get'].handler;
       mockFanOut.mockResolvedValue([]);
       const result = await handler({ target: 'R1' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
@@ -101,11 +101,11 @@ describe('registerNoteTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['system-lcd-get']!.handler;
+      const handler = tools['system-lcd-get'].handler;
       mockFanOut.mockResolvedValue([]);
       await handler({ target: 'all' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
-      const [, target] = mockFanOut.mock.calls[0]!;
+      const [, target] = mockFanOut.mock.calls[0];
       expect(target).toBe('all');
     });
   });

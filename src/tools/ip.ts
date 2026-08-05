@@ -2,12 +2,13 @@
  * IP Addressing & Routing tools — addresses, ARP, routes, pools, settings.
  * RouterOS sections: /ip/address, /ip/arp, /ip/route, /ip/pool, /ip/settings
  */
+
+import { randomUUID } from 'node:crypto';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { randomUUID } from 'node:crypto';
 import { fanOut } from '../fan-out.js';
-import type { KeePassClient, DeviceTransport, ToolDeps } from '../types/index.js';
-import { parseDetailRecords, parseKeyValue, normalizeRecord } from '../parsers.js';
+import { normalizeRecord, parseDetailRecords, parseKeyValue } from '../parsers.js';
+import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Parsers

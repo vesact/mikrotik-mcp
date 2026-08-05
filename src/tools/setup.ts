@@ -4,11 +4,12 @@
  * to a configured port, and stores credentials in KeePass.
  * Password never leaves the server.
  */
+
+import { randomBytes } from 'node:crypto';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { randomBytes } from 'node:crypto';
 import { RestTransportImpl } from '../rest/rest-transport.js';
-import type { KeePassClient, DeviceTransport, KeePassCredential } from '../types/index.js';
+import type { DeviceTransport, KeePassClient, KeePassCredential } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Password generation
@@ -26,14 +27,14 @@ const INITIAL_HTTP_PORT = 80;
  * Set it to relocate the HTTP API as part of bootstrap.
  */
 function resolveTargetPort(): number {
-  const parsed = Number(process.env['ROUTEROS_SETUP_PORT']);
+  const parsed = Number(process.env.ROUTEROS_SETUP_PORT);
   return Number.isInteger(parsed) && parsed > 0 && parsed < 65536 ? parsed : INITIAL_HTTP_PORT;
 }
 
 /** Generate a cryptographically secure alphanumeric password. */
 export function generatePassword(length: number = PASSWORD_LENGTH): string {
   const bytes = randomBytes(length);
-  return Array.from(bytes, (b) => PASSWORD_CHARSET[b % PASSWORD_CHARSET.length]!).join('');
+  return Array.from(bytes, (b) => PASSWORD_CHARSET[b % PASSWORD_CHARSET.length]).join('');
 }
 
 // ---------------------------------------------------------------------------
@@ -113,7 +114,7 @@ async function setupDevice(
   if (relocatePort) {
     try {
       const services = await initial.query(noPassCred, '/ip/service');
-      const www = services.find((s) => s['name'] === 'www');
+      const www = services.find((s) => s.name === 'www');
       if (!www?.['.id']) {
         return fail('port-change', new Error('www service entry not found'), true);
       }
@@ -142,7 +143,7 @@ async function setupDevice(
   // --- Step 5: Set admin password (target port, still no password) ---
   try {
     const users = await target.query(noPassCred, '/user');
-    const admin = users.find((u) => u['name'] === 'admin');
+    const admin = users.find((u) => u.name === 'admin');
     if (!admin?.['.id']) {
       return fail('password', new Error('admin user entry not found'), true);
     }

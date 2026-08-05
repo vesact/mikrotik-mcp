@@ -1,5 +1,5 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { KeePassClient, DeviceTransport } from '../../../src/types/index.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DeviceTransport, KeePassClient } from '../../../src/types/index.js';
 
 const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() => ({
   mockListDevices: vi.fn(),
@@ -10,13 +10,13 @@ const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() =>
 
 vi.mock('../../../src/fan-out.js', () => ({ fanOut: mockFanOut }));
 
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
-  parseInterfaces,
-  parseInterfaceStats,
   parseInterfaceListMembers,
+  parseInterfaceStats,
+  parseInterfaces,
   registerInterfaceTools,
 } from '../../../src/tools/interfaces.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 describe('parseInterfaces', () => {
   it('parses interface detail output with full detail fields', () => {
@@ -31,10 +31,10 @@ describe('parseInterfaces', () => {
     ].join('\r\n');
     const result = parseInterfaces(raw);
     expect(result).toHaveLength(2);
-    expect(result[0]!.name).toBe('ether1');
-    expect(result[0]!.type).toBe('ether');
-    expect(result[0]!.macAddress).toBe('AA:BB:CC:DD:EE:02');
-    expect(result[1]!.name).toBe('ether2');
+    expect(result[0].name).toBe('ether1');
+    expect(result[0].type).toBe('ether');
+    expect(result[0].macAddress).toBe('AA:BB:CC:DD:EE:02');
+    expect(result[1].name).toBe('ether2');
   });
 
   it('returns empty for empty output', () => {
@@ -57,13 +57,13 @@ describe('parseInterfaceStats', () => {
     ].join('\r\n');
     const result = parseInterfaceStats(raw);
     expect(result).toHaveLength(2);
-    expect(result[0]!.name).toBe('ether1');
-    expect(result[0]!.rxBytes).toBe('0');
-    expect(result[0]!.txBytes).toBe('0');
-    expect(result[1]!.name).toBe('ether2');
-    expect(result[1]!.rxBytes).toBe('8875233');
-    expect(result[1]!.txBytes).toBe('66635048');
-    expect(result[1]!.rxPackets).toBe('4381');
+    expect(result[0].name).toBe('ether1');
+    expect(result[0].rxBytes).toBe('0');
+    expect(result[0].txBytes).toBe('0');
+    expect(result[1].name).toBe('ether2');
+    expect(result[1].rxBytes).toBe('8875233');
+    expect(result[1].txBytes).toBe('66635048');
+    expect(result[1].rxPackets).toBe('4381');
   });
 
   it('returns empty for empty output', () => {
@@ -121,7 +121,7 @@ describe('registerInterfaceTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['interface-list']!.handler;
+      const handler = tools['interface-list'].handler;
       mockFanOut.mockResolvedValue([]);
       const result = await handler({ target: 'R1' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();

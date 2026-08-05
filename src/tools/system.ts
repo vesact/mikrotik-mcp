@@ -2,15 +2,16 @@
  * System tools — identity and clock management.
  * RouterOS section: /system/identity, /system/clock
  */
+
+import { randomUUID } from 'node:crypto';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { randomUUID } from 'node:crypto';
 import { fanOut } from '../fan-out.js';
-import type { KeePassClient, DeviceTransport, ToolDeps } from '../types/index.js';
-import { parseKeyValue, normalizeRecord } from '../parsers.js';
+import { normalizeRecord, parseKeyValue } from '../parsers.js';
+import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
 
 // Re-export for backward compatibility (tests may import from here)
-export { parseKeyValue, parseDetailRecords } from '../parsers.js';
+export { parseDetailRecords, parseKeyValue } from '../parsers.js';
 
 // ---------------------------------------------------------------------------
 // Parsers
