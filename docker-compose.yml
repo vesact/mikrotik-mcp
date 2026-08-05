@@ -1,0 +1,19 @@
+services:
+  mikrotik-mcp:
+    build: .
+    environment:
+      MCP_TRANSPORT: http
+      MCP_HTTP_PORT: "8000"
+      KEEPASS_PATH: /config/vault.kdbx
+      KEEPASS_PASSWORD: ${KEEPASS_PASSWORD}
+      KEEPASS_GROUP: ${KEEPASS_GROUP:-Mikrotik-CHR}
+      ROUTEROS_REST_PORT: ${ROUTEROS_REST_PORT:-443}
+      ROUTEROS_REST_SCHEME: ${ROUTEROS_REST_SCHEME:-https}
+      ROUTEROS_TIMEOUT_MS: ${ROUTEROS_TIMEOUT_MS:-10000}
+      SSH_TIMEOUT_MS: ${SSH_TIMEOUT_MS:-10000}
+      READ_ONLY: ${READ_ONLY:-false}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config:/config:ro
+    restart: unless-stopped
