@@ -3,9 +3,9 @@
  * No other module may import ssh2 directly (architectural boundary).
  */
 import { Client } from 'ssh2';
-import type { SshTransport, KeePassCredential, RosRecord } from '../types/index.js';
-import { SshError, SshTimeoutError, SshHostKeyError } from '../types/index.js';
 import { parseDetailRecords, parseKeyValue } from '../parsers.js';
+import type { KeePassCredential, RosRecord, SshTransport } from '../types/index.js';
+import { SshError, SshHostKeyError, SshTimeoutError } from '../types/index.js';
 
 export interface SshTransportOptions {
   /** Command/connection timeout in milliseconds (default: SSH_TIMEOUT_MS env or 10000). */
@@ -129,7 +129,7 @@ export class SshTransportImpl implements SshTransport {
   }
 
   async query(credential: KeePassCredential, path: string): Promise<RosRecord[]> {
-    const command = path + '/print detail';
+    const command = `${path}/print detail`;
     const raw = await this.executeCommand(credential, command);
     const records = parseDetailRecords(raw);
     if (records.length > 0) return records;
@@ -153,7 +153,7 @@ export class SshTransportImpl implements SshTransport {
         if (v.includes(' ')) return `${k}="${v}"`;
         return `${k}=${v}`;
       });
-      command += ' ' + parts.join(' ');
+      command += ` ${parts.join(' ')}`;
     }
     const result = await this.executeCommand(credential, command);
     return result || undefined;
@@ -170,7 +170,7 @@ export class SshTransportImpl implements SshTransport {
         if (v.includes(' ')) return `${k}="${v}"`;
         return `${k}=${v}`;
       });
-      fullCommand += ' ' + parts.join(' ');
+      fullCommand += ` ${parts.join(' ')}`;
     }
     return this.executeCommand(credential, fullCommand);
   }

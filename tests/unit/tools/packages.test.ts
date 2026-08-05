@@ -1,5 +1,5 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { KeePassClient, DeviceTransport } from '../../../src/types/index.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DeviceTransport, KeePassClient } from '../../../src/types/index.js';
 
 const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() => ({
   mockListDevices: vi.fn(),
@@ -12,13 +12,13 @@ vi.mock('../../../src/fan-out.js', () => ({
   fanOut: mockFanOut,
 }));
 
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
-  parsePackages,
-  parseLicense,
   parseHistory,
+  parseLicense,
+  parsePackages,
   registerPackageTools,
 } from '../../../src/tools/packages.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // --- Parser tests ---
 
@@ -46,8 +46,8 @@ describe('parsePackages', () => {
       ' 0    name="routeros" version="7.22.1" size=11.7MiB \r\n\r\n 1    name="wireless" version="7.22.1" size=1.2MiB \r\n\r\n';
     const result = parsePackages(raw);
     expect(result).toHaveLength(2);
-    expect(result[0]!['name']).toBe('routeros');
-    expect(result[1]!['name']).toBe('wireless');
+    expect(result[0].name).toBe('routeros');
+    expect(result[1].name).toBe('wireless');
   });
 });
 
@@ -72,10 +72,10 @@ describe('parseHistory', () => {
       'Flags: U - UNDOABLE\r\n U redo=/ip action="ip address changed" \r\n    by="admin" policy=write time=2025-01-15 \r\n\r\n';
     const result = parseHistory(raw);
     expect(result).toHaveLength(1);
-    expect(result[0]!.action).toBe('ip address changed');
-    expect(result[0]!.by).toBe('admin');
-    expect(result[0]!.policy).toBe('write');
-    expect(result[0]!.time).toBe('2025-01-15');
+    expect(result[0].action).toBe('ip address changed');
+    expect(result[0].by).toBe('admin');
+    expect(result[0].policy).toBe('write');
+    expect(result[0].time).toBe('2025-01-15');
   });
 
   it('returns empty array for empty output', () => {
@@ -115,7 +115,7 @@ describe('registerPackageTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['system-packages-list']!.handler;
+      const handler = tools['system-packages-list'].handler;
 
       mockFanOut.mockResolvedValue([
         { deviceId: 'R1', success: true, data: [{ name: 'routeros', version: '7.22.1' }] },
@@ -135,12 +135,12 @@ describe('registerPackageTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['system-license-get']!.handler;
+      const handler = tools['system-license-get'].handler;
 
       mockFanOut.mockResolvedValue([]);
       await handler({ target: 'all' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
-      const [, target] = mockFanOut.mock.calls[0]!;
+      const [, target] = mockFanOut.mock.calls[0];
       expect(target).toBe('all');
     });
   });
@@ -153,12 +153,12 @@ describe('registerPackageTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['system-history-get']!.handler;
+      const handler = tools['system-history-get'].handler;
 
       mockFanOut.mockResolvedValue([]);
       await handler({ target: 'R1' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
-      const [, target] = mockFanOut.mock.calls[0]!;
+      const [, target] = mockFanOut.mock.calls[0];
       expect(target).toBe('R1');
     });
   });

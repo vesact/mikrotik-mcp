@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // --- Hoisted mock fns (available inside vi.mock factories) ---
 
@@ -44,8 +44,8 @@ vi.mock('../../src/fan-out.js', () => ({
 
 // --- Imports (after mocks) ---
 
-import { createServer } from '../../src/server.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { createServer } from '../../src/server.js';
 import type { ToolDeps } from '../../src/types/index.js';
 
 describe('createServer', () => {
@@ -86,7 +86,7 @@ describe('createServer', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['device-list']!.handler;
+      const handler = tools['device-list'].handler;
 
       mockListDevices.mockResolvedValue([
         { deviceId: 'Router-01', hostname: '10.0.0.1', username: 'admin', password: 'secret123' },
@@ -94,7 +94,7 @@ describe('createServer', () => {
       ]);
 
       const result = (await handler({}, {})) as { content: Array<{ text: string }> };
-      const parsed = JSON.parse(result.content[0]!.text) as Array<Record<string, string>>;
+      const parsed = JSON.parse(result.content[0].text) as Array<Record<string, string>>;
 
       expect(parsed).toHaveLength(2);
       expect(parsed[0]).toEqual({ deviceId: 'Router-01', hostname: '10.0.0.1', username: 'admin' });
@@ -181,11 +181,11 @@ describe('createServer', () => {
       (server as { _registeredTools: Record<string, unknown> })._registeredTools;
 
     afterEach(() => {
-      delete process.env['READ_ONLY'];
+      delete process.env.READ_ONLY;
     });
 
     it('registers all tools when READ_ONLY is unset (default behavior)', async () => {
-      delete process.env['READ_ONLY'];
+      delete process.env.READ_ONLY;
       const server = await createServer();
       const tools = getTools(server);
       for (const name of [...READ_ONLY_TOOL_NAMES, ...EXCLUDED_TOOL_NAMES]) {
@@ -194,7 +194,7 @@ describe('createServer', () => {
     });
 
     it('registers all tools when READ_ONLY=false', async () => {
-      process.env['READ_ONLY'] = 'false';
+      process.env.READ_ONLY = 'false';
       const server = await createServer();
       const tools = getTools(server);
       expect(tools).toHaveProperty('ros-command');
@@ -202,14 +202,14 @@ describe('createServer', () => {
     });
 
     it('exposes exactly the read-only allow-list when READ_ONLY=true', async () => {
-      process.env['READ_ONLY'] = 'true';
+      process.env.READ_ONLY = 'true';
       const server = await createServer();
       const registered = Object.keys(getTools(server)).sort();
       expect(registered).toEqual([...READ_ONLY_TOOL_NAMES].sort());
     });
 
     it('withholds all write/execution and active diagnostic tools when READ_ONLY=true', async () => {
-      process.env['READ_ONLY'] = 'true';
+      process.env.READ_ONLY = 'true';
       const server = await createServer();
       const tools = getTools(server);
       for (const name of EXCLUDED_TOOL_NAMES) {
@@ -218,7 +218,7 @@ describe('createServer', () => {
     });
 
     it('keeps the read-only netwatch tool but drops the active diagnostics from the same module', async () => {
-      process.env['READ_ONLY'] = 'true';
+      process.env.READ_ONLY = 'true';
       const server = await createServer();
       const tools = getTools(server);
       expect(tools).toHaveProperty('tools-netwatch-list');
@@ -229,7 +229,7 @@ describe('createServer', () => {
     it.each(['1', 'yes', 'on', 'TRUE', 'True', ' true '])(
       'treats %j as enabling read-only mode',
       async (value) => {
-        process.env['READ_ONLY'] = value;
+        process.env.READ_ONLY = value;
         const server = await createServer();
         const tools = getTools(server);
         expect(tools).not.toHaveProperty('ros-command');
@@ -240,7 +240,7 @@ describe('createServer', () => {
     it.each(['0', 'no', 'off', 'false', ''])(
       'treats %j as NOT enabling read-only mode',
       async (value) => {
-        process.env['READ_ONLY'] = value;
+        process.env.READ_ONLY = value;
         const server = await createServer();
         const tools = getTools(server);
         expect(tools).toHaveProperty('ros-command');
@@ -307,7 +307,7 @@ describe('createServer', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['ros-command']!.handler;
+      const handler = tools['ros-command'].handler;
 
       mockFanOut.mockResolvedValue([
         { deviceId: 'Router-01', success: true, data: 'identity: MikroTik' },
@@ -316,7 +316,7 @@ describe('createServer', () => {
       await handler({ target: 'Router-01', command: '/system/identity/print' }, {});
 
       expect(mockFanOut).toHaveBeenCalledOnce();
-      const [deps, target, callback] = mockFanOut.mock.calls[0]!;
+      const [deps, target, callback] = mockFanOut.mock.calls[0];
       expect(target).toBe('Router-01');
       expect(deps).toHaveProperty('sessionId');
       expect(deps).toHaveProperty('keepass');
@@ -331,7 +331,7 @@ describe('createServer', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['ros-command']!.handler;
+      const handler = tools['ros-command'].handler;
 
       mockFanOut.mockResolvedValue([]);
 
@@ -339,8 +339,8 @@ describe('createServer', () => {
       await handler({ target: 'all', command: '/ip/address/print' }, {});
 
       expect(mockFanOut).toHaveBeenCalledTimes(2);
-      const sessionId1 = (mockFanOut.mock.calls[0]![0] as ToolDeps).sessionId;
-      const sessionId2 = (mockFanOut.mock.calls[1]![0] as ToolDeps).sessionId;
+      const sessionId1 = (mockFanOut.mock.calls[0][0] as ToolDeps).sessionId;
+      const sessionId2 = (mockFanOut.mock.calls[1][0] as ToolDeps).sessionId;
       expect(sessionId1).not.toBe(sessionId2);
       // Verify UUID v4 format
       expect(sessionId1).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
@@ -353,7 +353,7 @@ describe('createServer', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['ros-command']!.handler;
+      const handler = tools['ros-command'].handler;
 
       const mockResults = [
         { deviceId: 'Router-01', success: true, data: 'identity: MikroTik' },

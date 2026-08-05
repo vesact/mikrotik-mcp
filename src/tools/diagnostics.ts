@@ -3,12 +3,13 @@
  * packet-sniffer, profile, netwatch, fetch, speed-test, wol, mac-scan, ip-scan, traffic-gen.
  * RouterOS sections: /ping, /tool
  */
+
+import { randomUUID } from 'node:crypto';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { randomUUID } from 'node:crypto';
 import { fanOut } from '../fan-out.js';
-import type { KeePassClient, DeviceTransport, ToolDeps } from '../types/index.js';
-import { parseDetailRecords, normalizeRecord } from '../parsers.js';
+import { normalizeRecord, parseDetailRecords } from '../parsers.js';
+import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -21,7 +22,7 @@ const MAX_REST_DURATION = '50';
 function clampDuration(dur: string, max = MAX_REST_DURATION): string {
   const n = parseInt(dur, 10);
   const m = parseInt(max, 10);
-  if (isNaN(n) || n > m) return max;
+  if (Number.isNaN(n) || n > m) return max;
   return String(n);
 }
 
@@ -45,12 +46,12 @@ export function parsePing(raw: string): {
   const minMatch = raw.match(/min-rtt=(\S+)/);
   const avgMatch = raw.match(/avg-rtt=(\S+)/);
   const maxMatch = raw.match(/max-rtt=(\S+)/);
-  if (sentMatch) result.sent = parseInt(sentMatch[1]!, 10);
-  if (recvMatch) result.received = parseInt(recvMatch[1]!, 10);
-  if (lossMatch) result.packetLoss = lossMatch[1]!;
-  if (minMatch) result.minRtt = minMatch[1]!;
-  if (avgMatch) result.avgRtt = avgMatch[1]!;
-  if (maxMatch) result.maxRtt = maxMatch[1]!;
+  if (sentMatch) result.sent = parseInt(sentMatch[1], 10);
+  if (recvMatch) result.received = parseInt(recvMatch[1], 10);
+  if (lossMatch) result.packetLoss = lossMatch[1];
+  if (minMatch) result.minRtt = minMatch[1];
+  if (avgMatch) result.avgRtt = avgMatch[1];
+  if (maxMatch) result.maxRtt = maxMatch[1];
   return result;
 }
 
@@ -80,14 +81,14 @@ export function parseTraceroute(raw: string): Array<{
     const m = line.match(/^\s*(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)/);
     if (m) {
       hops.push({
-        hop: m[1]!,
-        address: m[2]!,
-        loss: m[3]!,
-        sent: m[4]!,
-        lastRtt: m[5]!,
-        avgRtt: m[6]!,
-        bestRtt: m[7]!,
-        worstRtt: m[8]!,
+        hop: m[1],
+        address: m[2],
+        loss: m[3],
+        sent: m[4],
+        lastRtt: m[5],
+        avgRtt: m[6],
+        bestRtt: m[7],
+        worstRtt: m[8],
       });
     }
   }

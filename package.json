@@ -15,10 +15,13 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:device": "vitest run --config vitest.integration.config.ts",
     "test:all": "vitest run && vitest run --config vitest.integration.config.ts",
-    "lint": "eslint src tests",
-    "lint:fix": "eslint src tests --fix",
-    "format": "prettier --write src tests",
-    "format:check": "prettier --check src tests"
+    "lint": "biome lint",
+    "lint:fix": "biome lint --write",
+    "format": "biome format --write",
+    "format:check": "biome format",
+    "check": "biome check",
+    "check:fix": "biome check --write",
+    "ci": "biome ci"
   },
   "repository": {
     "type": "git",
@@ -45,15 +48,11 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@biomejs/biome": "2.5.7",
     "@types/node": "^25.6.0",
     "@types/ssh2": "^1.15.5",
-    "eslint": "^10.2.1",
-    "eslint-config-prettier": "^10.1.8",
-    "prettier": "^3.8.3",
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.58.2",
     "vitest": "^4.1.4"
   }
 }

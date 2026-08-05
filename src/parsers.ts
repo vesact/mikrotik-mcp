@@ -60,9 +60,8 @@ export function parseDetailRecords(raw: string): Record<string, string>[] {
   const extractFields = (text: string): Record<string, string> => {
     const record: Record<string, string> = {};
     const regex = /([a-zA-Z][a-zA-Z0-9_-]*)=(?:"([^"]*?)"|(\S+))/g;
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-      const key = match[1]!;
+    for (const match of text.matchAll(regex)) {
+      const key = match[1];
       const value = match[2] ?? match[3] ?? '';
       record[key] = value;
     }
@@ -87,7 +86,7 @@ export function parseDetailRecords(raw: string): Record<string, string>[] {
     if (trimmed.startsWith('Flags:')) {
       const flagMatches = trimmed.matchAll(/([A-Z])\s*-\s*([\w-]+)/g);
       for (const fm of flagMatches) {
-        flagMap.set(fm[1]!, fm[2]!.toLowerCase());
+        flagMap.set(fm[1], fm[2].toLowerCase());
       }
       break;
     }
@@ -112,15 +111,15 @@ export function parseDetailRecords(raw: string): Record<string, string>[] {
       recordFlags.push(startMatch[2] ? startMatch[2].split('') : []);
     } else if (recordBlocks.length > 0) {
       // Continuation line — append to current record
-      recordBlocks[recordBlocks.length - 1] += ' ' + line.trim();
+      recordBlocks[recordBlocks.length - 1] += ` ${line.trim()}`;
     }
   }
 
   if (recordBlocks.length > 0) {
     for (let i = 0; i < recordBlocks.length; i++) {
-      const fields = extractFields(recordBlocks[i]!);
+      const fields = extractFields(recordBlocks[i]);
       // Inject flag-derived fields
-      for (const flagChar of recordFlags[i]!) {
+      for (const flagChar of recordFlags[i]) {
         const fieldName = flagMap.get(flagChar);
         if (fieldName && !(fieldName in fields)) {
           fields[fieldName] = 'yes';
@@ -169,22 +168,21 @@ export function parseTabularRecords(raw: string): Record<string, string>[] {
   // Find the header row (starts with #)
   let headerIdx = -1;
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i]!.trimStart().startsWith('#')) {
+    if (lines[i].trimStart().startsWith('#')) {
       headerIdx = i;
       break;
     }
   }
   if (headerIdx === -1) return results;
 
-  const headerLine = lines[headerIdx]!;
+  const headerLine = lines[headerIdx];
 
   // Determine column positions from header. The header looks like:
   // #   NAME     PORT  CERTIFICATE  VRF
   // We find the start index of each column name.
   const colHeaderRegex = /[A-Z][A-Z0-9_-]*/g;
   const columns: { name: string; start: number }[] = [];
-  let m;
-  while ((m = colHeaderRegex.exec(headerLine)) !== null) {
+  for (const m of headerLine.matchAll(colHeaderRegex)) {
     columns.push({ name: m[0].toLowerCase(), start: m.index });
   }
   if (columns.length === 0) return results;
@@ -197,7 +195,7 @@ export function parseTabularRecords(raw: string): Record<string, string>[] {
       // Parse "X - DISABLED, I - INVALID, D - DYNAMIC" etc.
       const flagMatches = trimmed.matchAll(/([A-Z])\s*-\s*([\w-]+)/g);
       for (const fm of flagMatches) {
-        flagMap.set(fm[1]!, fm[2]!.toLowerCase());
+        flagMap.set(fm[1], fm[2].toLowerCase());
       }
       break;
     }
@@ -205,7 +203,7 @@ export function parseTabularRecords(raw: string): Record<string, string>[] {
 
   // Parse data rows (after header)
   for (let i = headerIdx + 1; i < lines.length; i++) {
-    const line = lines[i]!;
+    const line = lines[i];
     if (line.trim() === '') continue;
 
     // Data rows start with the index number
@@ -214,7 +212,7 @@ export function parseTabularRecords(raw: string): Record<string, string>[] {
 
     // Check for flag characters between index and first column
     const indexEnd = rowMatch[0].length;
-    const firstColStart = columns[0]!.start;
+    const firstColStart = columns[0].start;
     const flagArea = line.slice(indexEnd, firstColStart);
 
     // Extract column values based on positions
@@ -228,8 +226,8 @@ export function parseTabularRecords(raw: string): Record<string, string>[] {
     }
 
     for (let c = 0; c < columns.length; c++) {
-      const col = columns[c]!;
-      const nextStart = c + 1 < columns.length ? columns[c + 1]!.start : line.length;
+      const col = columns[c];
+      const nextStart = c + 1 < columns.length ? columns[c + 1].start : line.length;
       const value = line.slice(col.start, nextStart).trim();
       if (value) {
         record[col.name] = value;

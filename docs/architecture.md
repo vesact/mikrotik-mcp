@@ -370,6 +370,9 @@ FR-AUDIT, FR-CORE-2, FR-INFRA-4/5 scope corrections documented in Core Decisions
 **Code quality tooling — resolved:**
 ESLint + Prettier to be configured in the project scaffold story. Agents must not
 introduce alternative formatters.
+*Superseded 2026-08-05: ESLint + Prettier were replaced by Biome, which covers both
+linting and formatting from a single `biome.json`. The "no alternative formatters"
+rule still stands — it now means Biome.*
 
 ### Architecture Completeness Checklist
 

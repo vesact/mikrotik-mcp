@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { KeePassClient, ToolDeps } from '../../../src/types/index.js';
 
 // --- Hoisted mock fns ---
@@ -34,13 +34,13 @@ vi.mock('../../../src/fan-out.js', () => ({
 
 // --- Imports (after mocks) ---
 
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
-  parseKeyValue,
-  parseIdentity,
   parseClock,
+  parseIdentity,
+  parseKeyValue,
   registerSystemTools,
 } from '../../../src/tools/system.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // --- Parser tests (pure functions, no mocking) ---
 
@@ -160,7 +160,7 @@ describe('registerSystemTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['system-identity-get']!.handler;
+      const handler = tools['system-identity-get'].handler;
 
       mockFanOut.mockResolvedValue([
         { deviceId: 'Router-01', success: true, data: { name: 'router-01' } },
@@ -169,7 +169,7 @@ describe('registerSystemTools', () => {
       const result = await handler({ target: 'Router-01' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
 
-      const [deps, target] = mockFanOut.mock.calls[0]!;
+      const [deps, target] = mockFanOut.mock.calls[0];
       expect(target).toBe('Router-01');
       expect((deps as ToolDeps).sessionId).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
@@ -198,7 +198,7 @@ describe('registerSystemTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools['system-clock-get']!.handler;
+      const handler = tools['system-clock-get'].handler;
 
       mockFanOut.mockResolvedValue([
         {

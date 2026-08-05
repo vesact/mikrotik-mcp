@@ -2,28 +2,29 @@
  * MCP server setup — REST-first with SSH fallback for raw CLI commands.
  * Instantiates KeePass + transport dependencies, registers tools, returns wired McpServer.
  */
+
+import { randomUUID } from 'node:crypto';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { randomUUID } from 'node:crypto';
-import { KeePassClientImpl } from './keepass/keepass-client.js';
-import { SshTransportImpl } from './ssh/ssh-transport.js';
-import { RestTransportImpl } from './rest/rest-transport.js';
 import { fanOut } from './fan-out.js';
-import { registerSystemTools } from './tools/system.js';
-import { registerHealthTools } from './tools/health.js';
-import { registerPackageTools } from './tools/packages.js';
-import { registerNoteTools } from './tools/note.js';
-import { registerLogTools } from './tools/log.js';
-import { registerCertificateTools } from './tools/certificates.js';
-import { registerInterfaceTools } from './tools/interfaces.js';
-import { registerBridgeTools } from './tools/bridge.js';
-import { registerIpTools } from './tools/ip.js';
-import { registerFirewallTools } from './tools/firewall.js';
-import { registerDhcpDnsTools } from './tools/dhcp-dns.js';
-import { registerPppUserTools } from './tools/ppp-user.js';
+import { KeePassClientImpl } from './keepass/keepass-client.js';
+import { RestTransportImpl } from './rest/rest-transport.js';
+import { SshTransportImpl } from './ssh/ssh-transport.js';
 import { registerAdminTools } from './tools/admin.js';
+import { registerBridgeTools } from './tools/bridge.js';
+import { registerCertificateTools } from './tools/certificates.js';
+import { registerDhcpDnsTools } from './tools/dhcp-dns.js';
 import { registerDiagnosticTools } from './tools/diagnostics.js';
+import { registerFirewallTools } from './tools/firewall.js';
+import { registerHealthTools } from './tools/health.js';
+import { registerInterfaceTools } from './tools/interfaces.js';
+import { registerIpTools } from './tools/ip.js';
+import { registerLogTools } from './tools/log.js';
+import { registerNoteTools } from './tools/note.js';
+import { registerPackageTools } from './tools/packages.js';
+import { registerPppUserTools } from './tools/ppp-user.js';
 import { registerSetupTools } from './tools/setup.js';
+import { registerSystemTools } from './tools/system.js';
 import type { DeviceTransport, ToolDeps } from './types/index.js';
 
 /**
@@ -119,9 +120,9 @@ function envFlag(value: string | undefined): boolean {
  */
 export async function createServer(): Promise<McpServer> {
   // --- Dependencies ---
-  const keepassPath = process.env['KEEPASS_PATH'] ?? '/config/keepass.kdbx';
-  const keepassPassword = process.env['KEEPASS_PASSWORD'] ?? '';
-  const keepassGroup = process.env['KEEPASS_GROUP'] ?? 'mikrotik';
+  const keepassPath = process.env.KEEPASS_PATH ?? '/config/keepass.kdbx';
+  const keepassPassword = process.env.KEEPASS_PASSWORD ?? '';
+  const keepassGroup = process.env.KEEPASS_GROUP ?? 'mikrotik';
 
   const keepass = new KeePassClientImpl(keepassPath, keepassPassword, keepassGroup);
   await keepass.open(); // fail-fast: throws on bad password / missing vault
@@ -139,20 +140,24 @@ export async function createServer(): Promise<McpServer> {
   // When enabled, wrap registerTool so only allow-listed read-only tools are
   // registered. All registration paths below (inline + registerXxxTools) flow
   // through this single choke point, so nothing else needs to change.
-  const readOnly = envFlag(process.env['READ_ONLY']);
+  const readOnly = envFlag(process.env.READ_ONLY);
   if (readOnly) {
-    const originalRegisterTool = server.registerTool.bind(server);
+    // registerTool is heavily overloaded; erase it to a single loose signature
+    // so the wrapper can forward arbitrary argument shapes through unchanged.
+    type LooseRegisterTool = (name: string, ...rest: unknown[]) => unknown;
+    const originalRegisterTool = server.registerTool.bind(server) as unknown as LooseRegisterTool;
     const skipped: string[] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (server as any).registerTool = (name: string, ...rest: unknown[]): unknown => {
+    (server as unknown as { registerTool: LooseRegisterTool }).registerTool = (
+      name,
+      ...rest
+    ): unknown => {
       if (!READ_ONLY_TOOLS.has(name)) {
         skipped.push(name);
         // Return a stub matching registerTool's RegisteredTool shape closely
         // enough for callers that ignore the return value (all of ours do).
         return undefined;
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return (originalRegisterTool as any)(name, ...rest);
+      return originalRegisterTool(name, ...rest);
     };
     process.stderr.write(
       `[mikrotik-mcp] READ_ONLY mode ENABLED — exposing ${READ_ONLY_TOOLS.size} read-only tools; ` +

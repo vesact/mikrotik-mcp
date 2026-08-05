@@ -1,5 +1,5 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { KeePassClient, DeviceTransport } from '../../../src/types/index.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DeviceTransport, KeePassClient } from '../../../src/types/index.js';
 
 const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() => ({
   mockListDevices: vi.fn(),
@@ -10,15 +10,15 @@ const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() =>
 
 vi.mock('../../../src/fan-out.js', () => ({ fanOut: mockFanOut }));
 
-import { parseNtp, parseSnmp, registerAdminTools } from '../../../src/tools/admin.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { parseNtp, parseSnmp, registerAdminTools } from '../../../src/tools/admin.js';
 
 describe('parseNtp', () => {
   it('parses NTP config', () => {
     const raw = '     enabled: no     \r\n        mode: unicast\r\n';
     const result = parseNtp(raw);
-    expect(result['enabled']).toBe(false);
-    expect(result['mode']).toBe('unicast');
+    expect(result.enabled).toBe(false);
+    expect(result.mode).toBe('unicast');
   });
 });
 
@@ -26,8 +26,8 @@ describe('parseSnmp', () => {
   it('parses SNMP config', () => {
     const raw = '           enabled: no            \r\n    trap-community: public        \r\n';
     const result = parseSnmp(raw);
-    expect(result['enabled']).toBe(false);
-    expect(result['trapCommunity']).toBe('public');
+    expect(result.enabled).toBe(false);
+    expect(result.trapCommunity).toBe('public');
   });
 });
 
@@ -63,7 +63,7 @@ describe('registerAdminTools', () => {
         }
       )._registeredTools;
       mockFanOut.mockResolvedValue([]);
-      const result = await tools[toolName]!.handler({ target: 'R1' }, {});
+      const result = await tools[toolName].handler({ target: 'R1' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
       expect(result).toHaveProperty('content');
       vi.clearAllMocks();

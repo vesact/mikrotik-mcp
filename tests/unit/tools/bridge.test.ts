@@ -1,5 +1,5 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { KeePassClient, DeviceTransport } from '../../../src/types/index.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DeviceTransport, KeePassClient } from '../../../src/types/index.js';
 
 const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() => ({
   mockListDevices: vi.fn(),
@@ -10,15 +10,15 @@ const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() =>
 
 vi.mock('../../../src/fan-out.js', () => ({ fanOut: mockFanOut }));
 
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
-  parseBridges,
-  parseBridgePorts,
-  parseBridgeVlans,
   parseBridgeHosts,
+  parseBridgePorts,
+  parseBridges,
+  parseBridgeVlans,
   parseNeighbors,
   registerBridgeTools,
 } from '../../../src/tools/bridge.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // ---------------------------------------------------------------------------
 // Parsers
@@ -164,7 +164,7 @@ describe('registerBridgeTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools[toolName]!.handler;
+      const handler = tools[toolName].handler;
       mockFanOut.mockResolvedValue([]);
       const result = await handler({ target: 'R1' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();

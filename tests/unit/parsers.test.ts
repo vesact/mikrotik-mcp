@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  kebabToCamel,
   coerce,
+  kebabToCamel,
   normalizeRecord,
-  REDACTED_FIELDS,
-  parseKeyValue,
   parseDetailRecords,
+  parseKeyValue,
+  REDACTED_FIELDS,
 } from '../../src/parsers.js';
 
 describe('kebabToCamel', () => {
@@ -71,9 +71,9 @@ describe('normalizeRecord', () => {
   it('redacts sensitive fields', () => {
     const input = { name: 'user1', password: 'secret123', secret: 'mysecret' };
     const result = normalizeRecord(input);
-    expect(result['password']).toBe('[REDACTED]');
-    expect(result['secret']).toBe('[REDACTED]');
-    expect(result['name']).toBe('user1');
+    expect(result.password).toBe('[REDACTED]');
+    expect(result.secret).toBe('[REDACTED]');
+    expect(result.name).toBe('user1');
   });
 
   it('converts empty values to null', () => {

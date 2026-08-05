@@ -1,10 +1,10 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fanOut } from '../../src/fan-out.js';
 import type {
-  ToolDeps,
-  KeePassClient,
   DeviceTransport,
+  KeePassClient,
   KeePassCredential,
+  ToolDeps,
 } from '../../src/types/index.js';
 
 // --- Test data ---
@@ -215,7 +215,7 @@ describe('fanOut', () => {
 
       for (const result of results) {
         if (!result.success && result.error) {
-          const cred = allDevices.find((d) => d.deviceId === result.deviceId)!;
+          const cred = allDevices.find((d) => d.deviceId === result.deviceId);
           expect(result.error).not.toContain(cred.password);
           expect(result.error).not.toContain(cred.username);
         }

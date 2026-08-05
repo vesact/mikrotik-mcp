@@ -1,5 +1,5 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { KeePassClient, DeviceTransport } from '../../../src/types/index.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DeviceTransport, KeePassClient } from '../../../src/types/index.js';
 
 const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() => ({
   mockListDevices: vi.fn(),
@@ -10,15 +10,15 @@ const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() =>
 
 vi.mock('../../../src/fan-out.js', () => ({ fanOut: mockFanOut }));
 
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
   parseAddresses,
   parseArp,
-  parseRoutes,
-  parsePools,
   parseIpSettings,
+  parsePools,
+  parseRoutes,
   registerIpTools,
 } from '../../../src/tools/ip.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // ---------------------------------------------------------------------------
 // Parsers
@@ -112,8 +112,8 @@ describe('parseIpSettings', () => {
     const raw =
       '                                 ip-forward: yes          \r\n                             send-redirects: yes          \r\n';
     const result = parseIpSettings(raw);
-    expect(result['ipForward']).toBe(true);
-    expect(result['sendRedirects']).toBe(true);
+    expect(result.ipForward).toBe(true);
+    expect(result.sendRedirects).toBe(true);
   });
 });
 
@@ -164,7 +164,7 @@ describe('registerIpTools', () => {
           _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
         }
       )._registeredTools;
-      const handler = tools[toolName]!.handler;
+      const handler = tools[toolName].handler;
       mockFanOut.mockResolvedValue([]);
       const result = await handler({ target: 'R1' }, {});
       expect(mockFanOut).toHaveBeenCalledOnce();
