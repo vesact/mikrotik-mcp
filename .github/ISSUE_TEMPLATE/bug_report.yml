@@ -1,0 +1,45 @@
+name: Bug report
+description: Report a problem with mikrotik-mcp
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. **Please redact hostnames, IPs, and credentials from any output you paste.**
+  - type: input
+    id: routeros-version
+    attributes:
+      label: RouterOS version
+      placeholder: "e.g. 7.16.1 (CHR)"
+    validations:
+      required: true
+  - type: input
+    id: tool
+    attributes:
+      label: MCP tool invoked
+      placeholder: "e.g. firewall-filter-list"
+    validations:
+      required: true
+  - type: dropdown
+    id: transport
+    attributes:
+      label: MCP transport
+      options:
+        - stdio
+        - http (Docker)
+        - http (local)
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output (sanitized)
+      description: Server stderr output or tool error. Redact hostnames, IPs, and credentials.
+      render: shell

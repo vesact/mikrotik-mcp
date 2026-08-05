@@ -1,0 +1,43 @@
+node_modules/
+dist/
+.env
+.env.test
+*.tgz
+*.log
+.idea/
+.DS_Store
+
+# BMad personal (per-user) config — never committed
+_bmad/config.user.toml
+_bmad/custom/config.user.toml
+
+# Scripts with real device credentials
+scripts/test-mcp-e2e.ts
+scripts/test-system-tools.ts
+scripts/create-test-vault.ts
+scripts/test-all-system.ts
+scripts/test-formats.ts
+scripts/test-health-e2e.ts
+scripts/test-history-debug.ts
+scripts/test-log-cmds.ts
+scripts/test-log-e2e.ts
+scripts/test-log-parse.ts
+scripts/test-packages-e2e.ts
+scripts/test-interfaces.ts
+scripts/test-if-stats.ts
+scripts/test-bridge-e2e.ts
+scripts/test-ip-e2e.ts
+scripts/test-firewall-e2e.ts
+scripts/test-dhcp-e2e.ts
+scripts/test-ppp-e2e.ts
+scripts/test-firewall-parsed.ts
+scripts/test-diag-e2e.ts
+scripts/test-traceroute.ts
+
+# Local AI-assistant tooling (BMad framework + editor skill copies) — not part of the public project
+.claude/
+.opencode/
+.github/skills/
+_bmad/
+_bmad-output/
+opencode.json
