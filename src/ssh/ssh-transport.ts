@@ -3,9 +3,9 @@
  * No other module may import ssh2 directly (architectural boundary).
  */
 import { Client } from 'ssh2';
-import type { SshTransport, KeePassCredential, RosRecord } from '../types/index.js';
-import { SshError, SshTimeoutError, SshHostKeyError } from '../types/index.js';
 import { parseDetailRecords, parseKeyValue } from '../parsers.js';
+import type { KeePassCredential, RosRecord, SshTransport } from '../types/index.js';
+import { SshError, SshHostKeyError, SshTimeoutError } from '../types/index.js';
 
 export interface SshTransportOptions {
   /** Command/connection timeout in milliseconds (default: SSH_TIMEOUT_MS env or 10000). */

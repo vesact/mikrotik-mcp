@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Exercise the optional port-relocation path of setup-new-device.
 process.env.ROUTEROS_SETUP_PORT = '8080';
@@ -47,9 +47,9 @@ vi.mock('../../../src/rest/rest-transport.js', () => ({
 
 // --- Imports (after mocks) ---
 
-import { registerSetupTools, generatePassword } from '../../../src/tools/setup.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import type { KeePassClient, DeviceTransport } from '../../../src/types/index.js';
+import { generatePassword, registerSetupTools } from '../../../src/tools/setup.js';
+import type { DeviceTransport, KeePassClient } from '../../../src/types/index.js';
 
 // --- Helpers ---
 

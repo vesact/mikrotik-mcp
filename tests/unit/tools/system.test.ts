@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { KeePassClient, ToolDeps } from '../../../src/types/index.js';
 
 // --- Hoisted mock fns ---
@@ -34,13 +34,13 @@ vi.mock('../../../src/fan-out.js', () => ({
 
 // --- Imports (after mocks) ---
 
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
-  parseKeyValue,
-  parseIdentity,
   parseClock,
+  parseIdentity,
+  parseKeyValue,
   registerSystemTools,
 } from '../../../src/tools/system.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // --- Parser tests (pure functions, no mocking) ---
 

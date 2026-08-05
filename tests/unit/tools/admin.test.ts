@@ -1,5 +1,5 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { KeePassClient, DeviceTransport } from '../../../src/types/index.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DeviceTransport, KeePassClient } from '../../../src/types/index.js';
 
 const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() => ({
   mockListDevices: vi.fn(),
@@ -10,8 +10,8 @@ const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() =>
 
 vi.mock('../../../src/fan-out.js', () => ({ fanOut: mockFanOut }));
 
-import { parseNtp, parseSnmp, registerAdminTools } from '../../../src/tools/admin.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { parseNtp, parseSnmp, registerAdminTools } from '../../../src/tools/admin.js';
 
 describe('parseNtp', () => {
   it('parses NTP config', () => {

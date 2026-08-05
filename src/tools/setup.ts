@@ -4,11 +4,12 @@
  * to a configured port, and stores credentials in KeePass.
  * Password never leaves the server.
  */
+
+import { randomBytes } from 'node:crypto';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { randomBytes } from 'node:crypto';
 import { RestTransportImpl } from '../rest/rest-transport.js';
-import type { KeePassClient, DeviceTransport, KeePassCredential } from '../types/index.js';
+import type { DeviceTransport, KeePassClient, KeePassCredential } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Password generation

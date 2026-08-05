@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // --- Hoisted mock fns (available inside vi.mock factories) ---
 
@@ -44,8 +44,8 @@ vi.mock('../../src/fan-out.js', () => ({
 
 // --- Imports (after mocks) ---
 
-import { createServer } from '../../src/server.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { createServer } from '../../src/server.js';
 import type { ToolDeps } from '../../src/types/index.js';
 
 describe('createServer', () => {

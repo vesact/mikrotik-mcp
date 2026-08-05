@@ -3,12 +3,13 @@
  * packet-sniffer, profile, netwatch, fetch, speed-test, wol, mac-scan, ip-scan, traffic-gen.
  * RouterOS sections: /ping, /tool
  */
+
+import { randomUUID } from 'node:crypto';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { randomUUID } from 'node:crypto';
 import { fanOut } from '../fan-out.js';
-import type { KeePassClient, DeviceTransport, ToolDeps } from '../types/index.js';
-import { parseDetailRecords, normalizeRecord } from '../parsers.js';
+import { normalizeRecord, parseDetailRecords } from '../parsers.js';
+import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Constants

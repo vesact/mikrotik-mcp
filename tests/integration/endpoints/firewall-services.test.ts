@@ -1,10 +1,10 @@
 /**
  * Integration tests — Firewall, Services, DHCP, DNS.
  */
-import { describe, it, expect, beforeAll } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
+import type { DeviceTransport, KeePassCredential } from '../../../src/types/index.js';
 import { loadTestConfig, requireDevices, type TestDevice } from '../config.js';
 import { createTransport, toCredential } from '../helpers.js';
-import type { DeviceTransport, KeePassCredential } from '../../../src/types/index.js';
 
 let device: TestDevice;
 let transport: DeviceTransport;

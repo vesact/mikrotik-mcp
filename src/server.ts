@@ -2,28 +2,29 @@
  * MCP server setup — REST-first with SSH fallback for raw CLI commands.
  * Instantiates KeePass + transport dependencies, registers tools, returns wired McpServer.
  */
+
+import { randomUUID } from 'node:crypto';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { randomUUID } from 'node:crypto';
-import { KeePassClientImpl } from './keepass/keepass-client.js';
-import { SshTransportImpl } from './ssh/ssh-transport.js';
-import { RestTransportImpl } from './rest/rest-transport.js';
 import { fanOut } from './fan-out.js';
-import { registerSystemTools } from './tools/system.js';
-import { registerHealthTools } from './tools/health.js';
-import { registerPackageTools } from './tools/packages.js';
-import { registerNoteTools } from './tools/note.js';
-import { registerLogTools } from './tools/log.js';
-import { registerCertificateTools } from './tools/certificates.js';
-import { registerInterfaceTools } from './tools/interfaces.js';
-import { registerBridgeTools } from './tools/bridge.js';
-import { registerIpTools } from './tools/ip.js';
-import { registerFirewallTools } from './tools/firewall.js';
-import { registerDhcpDnsTools } from './tools/dhcp-dns.js';
-import { registerPppUserTools } from './tools/ppp-user.js';
+import { KeePassClientImpl } from './keepass/keepass-client.js';
+import { RestTransportImpl } from './rest/rest-transport.js';
+import { SshTransportImpl } from './ssh/ssh-transport.js';
 import { registerAdminTools } from './tools/admin.js';
+import { registerBridgeTools } from './tools/bridge.js';
+import { registerCertificateTools } from './tools/certificates.js';
+import { registerDhcpDnsTools } from './tools/dhcp-dns.js';
 import { registerDiagnosticTools } from './tools/diagnostics.js';
+import { registerFirewallTools } from './tools/firewall.js';
+import { registerHealthTools } from './tools/health.js';
+import { registerInterfaceTools } from './tools/interfaces.js';
+import { registerIpTools } from './tools/ip.js';
+import { registerLogTools } from './tools/log.js';
+import { registerNoteTools } from './tools/note.js';
+import { registerPackageTools } from './tools/packages.js';
+import { registerPppUserTools } from './tools/ppp-user.js';
 import { registerSetupTools } from './tools/setup.js';
+import { registerSystemTools } from './tools/system.js';
 import type { DeviceTransport, ToolDeps } from './types/index.js';
 
 /**

@@ -8,10 +8,11 @@
  * - KEEPASS_PATH, KEEPASS_PASSWORD, KEEPASS_GROUP env vars set
  * - Real device reachable via SSH
  */
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+
 import { Client as McpClient } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const device = process.env.INTEGRATION_TEST_DEVICE;
 const keepassPath = process.env.KEEPASS_PATH;

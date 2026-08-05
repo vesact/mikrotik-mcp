@@ -4,7 +4,7 @@
  *
  * Architectural mandate: always use Promise.allSettled, never Promise.all.
  */
-import type { ToolDeps, KeePassCredential, DeviceResult } from './types/index.js';
+import type { DeviceResult, KeePassCredential, ToolDeps } from './types/index.js';
 
 /** Callback executed per device during fan-out. */
 export type DeviceCallback = (credential: KeePassCredential, deps: ToolDeps) => Promise<unknown>;

@@ -1,8 +1,8 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SshTransportImpl, type SshTransportOptions } from '../../../src/ssh/ssh-transport.js';
-import { SshError, SshTimeoutError, SshHostKeyError } from '../../../src/types/index.js';
 import type { KeePassCredential } from '../../../src/types/index.js';
+import { SshError, SshHostKeyError, SshTimeoutError } from '../../../src/types/index.js';
 
 // --- Mock helpers ---
 

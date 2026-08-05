@@ -1,10 +1,10 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fanOut } from '../../src/fan-out.js';
 import type {
-  ToolDeps,
-  KeePassClient,
   DeviceTransport,
+  KeePassClient,
   KeePassCredential,
+  ToolDeps,
 } from '../../src/types/index.js';
 
 // --- Test data ---

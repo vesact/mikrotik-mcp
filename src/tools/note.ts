@@ -2,12 +2,13 @@
  * System note & LCD tools.
  * RouterOS section: /system/note, /system/lcd
  */
+
+import { randomUUID } from 'node:crypto';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { randomUUID } from 'node:crypto';
 import { fanOut } from '../fan-out.js';
-import type { KeePassClient, DeviceTransport, ToolDeps } from '../types/index.js';
-import { parseKeyValue, normalizeRecord } from '../parsers.js';
+import { normalizeRecord, parseKeyValue } from '../parsers.js';
+import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Parsers

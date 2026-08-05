@@ -6,15 +6,16 @@
  *  - Streamable HTTP (2025-03-26) on POST/GET/DELETE /mcp
  *  - Legacy SSE (2024-11-05) on GET /sse + POST /messages
  */
+
+import { randomUUID } from 'node:crypto';
 import {
   createServer as createHttpServer,
   type IncomingMessage,
   type ServerResponse,
 } from 'node:http';
-import { randomUUID } from 'node:crypto';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
 import { createServer } from './server.js';
 

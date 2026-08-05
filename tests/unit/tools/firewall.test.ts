@@ -1,5 +1,5 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { KeePassClient, DeviceTransport } from '../../../src/types/index.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DeviceTransport, KeePassClient } from '../../../src/types/index.js';
 
 const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() => ({
   mockListDevices: vi.fn(),
@@ -10,17 +10,17 @@ const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() =>
 
 vi.mock('../../../src/fan-out.js', () => ({ fanOut: mockFanOut }));
 
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import {
-  parseFirewallFilter,
-  parseFirewallNat,
-  parseFirewallMangle,
   parseAddressList,
   parseConnections,
-  parseServices,
+  parseFirewallFilter,
+  parseFirewallMangle,
+  parseFirewallNat,
   parseRadius,
+  parseServices,
   registerFirewallTools,
 } from '../../../src/tools/firewall.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // ---------------------------------------------------------------------------
 // Parsers

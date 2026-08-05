@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  kebabToCamel,
   coerce,
+  kebabToCamel,
   normalizeRecord,
-  REDACTED_FIELDS,
-  parseKeyValue,
   parseDetailRecords,
+  parseKeyValue,
+  REDACTED_FIELDS,
 } from '../../src/parsers.js';
 
 describe('kebabToCamel', () => {
