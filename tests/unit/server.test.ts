@@ -256,6 +256,50 @@ describe('createServer', () => {
       expect(tools).toHaveProperty('ros-command');
     });
 
+    it('exposes only target and command — no dry-run / confirmation parameter', async () => {
+      const server = await createServer();
+      const tools = (
+        server as unknown as {
+          _registeredTools: Record<string, { inputSchema?: { shape: Record<string, unknown> } }>;
+        }
+      )._registeredTools;
+
+      expect(Object.keys(tools['ros-command']!.inputSchema!.shape).sort()).toEqual([
+        'command',
+        'target',
+      ]);
+    });
+
+    it('advertises itself as a destructive write tool via annotations', async () => {
+      const server = await createServer();
+      const tools = (
+        server as unknown as {
+          _registeredTools: Record<string, { annotations?: Record<string, unknown> }>;
+        }
+      )._registeredTools;
+
+      expect(tools['ros-command']!.annotations).toMatchObject({
+        readOnlyHint: false,
+        destructiveHint: true,
+      });
+    });
+
+    it('executes on the first call — no confirmation round-trip', async () => {
+      const server = await createServer();
+      const tools = (
+        server as unknown as {
+          _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
+        }
+      )._registeredTools;
+
+      mockFanOut.mockResolvedValue([{ deviceId: 'Router-01', success: true, data: '' }]);
+
+      await tools['ros-command']!.handler({ target: 'all', command: '/system/reboot' }, {});
+
+      expect(mockFanOut).toHaveBeenCalledOnce();
+      expect(mockResolveCredentials).not.toHaveBeenCalled();
+    });
+
     it('calls fanOut with correct target and command', async () => {
       const server = await createServer();
       const tools = (

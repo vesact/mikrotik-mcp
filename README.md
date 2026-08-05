@@ -13,7 +13,7 @@ It exposes **65 tools** covering system administration, interfaces, bridging, IP
 - **Fleet-aware by design** — every tool accepts a `target` of a single device ID, a comma-separated list (`R1,R2,R3`), or `all`. Commands fan out in parallel and return per-device results; one unreachable device never fails the batch.
 - **REST-first transport** — structured JSON from the RouterOS REST API (RouterOS v7.1+), no brittle terminal scraping. SSH is used only for the `ros-command` escape hatch.
 - **KeePass-backed credentials** — devices are enumerated from a `.kdbx` vault group. The LLM only ever sees device IDs, never passwords.
-- **Safe by default** — `ros-command` defaults to dry-run mode, and a `READ_ONLY=true` switch withholds all 14 write/execution and active-diagnostic tools, exposing only the 51 state-query tools. Ideal for monitoring-only agent access.
+- **Enforced read-only mode** — `READ_ONLY=true` withholds all 14 write/execution and active-diagnostic tools at the protocol level, exposing only the 51 state-query tools. Ideal for monitoring-only agent access. Approval of individual write calls is left to the MCP client, which is where it can actually be enforced (see [Write operations and approval](#write-operations-and-approval)).
 - **Two MCP transports** — `stdio` for local clients (Claude Desktop, Claude Code) and Streamable HTTP (with legacy SSE fallback) for a shared team server.
 
 ## Tool overview
@@ -28,7 +28,7 @@ It exposes **65 tools** covering system administration, interfaces, bridging, IP
 | PPP & users | profiles, secrets, active sessions, AAA, system users, scheduler, scripts, logging rules |
 | Services | NTP, SNMP, reboot/shutdown |
 | Diagnostics | ping, traceroute, bandwidth test, torch, packet sniffer, profile, netwatch, fetch, speed test, WoL, MAC/IP scan, traffic generator |
-| Fleet & escape hatch | `device-list`, `setup-new-device`, `ros-command` (SSH, dry-run by default) |
+| Fleet & escape hatch | `device-list`, `setup-new-device`, `ros-command` (arbitrary CLI over SSH) |
 
 ## Quick start
 
@@ -83,7 +83,7 @@ Then ask things like:
 
 > "What's the RouterOS version across the whole fleet?"
 > "Show DHCP leases on router-01."
-> "Add a firewall filter on R1,R2 — dry-run first."
+> "Add a firewall filter on R1,R2."
 
 ## Configuration
 
@@ -107,6 +107,22 @@ All configuration is via environment variables (see [`.env.example`](.env.exampl
 ### Read-only mode
 
 With `READ_ONLY=true` (also accepts `1`/`yes`/`on`), the server exposes only the 51 read-only tools. `ros-command`, `setup-new-device`, and all active diagnostics (ping, traceroute, torch, bandwidth test, scans, …) are withheld — they mutate state or generate network traffic. The allow-list is explicit, so tools added in the future are withheld until deliberately classified.
+
+### Write operations and approval
+
+The server does not implement its own confirmation step for writes. Write tools execute on the first call, and `ros-command` in particular runs whatever it is given, verbatim, on every device matched by `target`.
+
+Approving individual calls is the MCP client's job — it is the layer that can actually enforce a decision and scope it per agent:
+
+- **Claude Code** — permission modes plus `allow`/`ask`/`deny` rules, e.g. `"deny": ["mcp__mikrotik__ros-command"]` or an `ask` rule for the whole server, in `.claude/settings.json`.
+- **Claude Desktop** and other hosts — per-tool approval prompts, kept enabled for this server.
+
+`ros-command` carries MCP `annotations` (`readOnlyHint: false`, `destructiveHint: true`) so clients can classify it without parsing its description.
+
+Two server-side controls remain, because they are enforcement rather than instruction:
+
+- `READ_ONLY=true` — the tools are never registered, so no client configuration can invoke them.
+- The RouterOS credentials in the vault — a device account with restricted permissions bounds what any approved command can do.
 
 ## Requirements
 

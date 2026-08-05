@@ -470,7 +470,6 @@ interface ToolResponse {
     devicesFailed: number;
     executionMs: number;
     warnings?: string[];
-    dryRun?: boolean;
   };
   results: DeviceResult[];
   summary?: FleetSummary;
@@ -508,19 +507,19 @@ Grouping uses structural equality (JSON hash) of the normalized records, ignorin
 
 **Remove** all dedicated write tools (`system-identity-set`, `system-clock-set`, `firewall-filter-add`, `firewall-filter-remove`, `firewall-nat-add`, `firewall-nat-remove`, etc.).
 
-**Keep** only `ros-command` as the universal write tool, with `dryRun: true` as default:
+**Keep** only `ros-command` as the universal write tool:
 
 ```typescript
 server.registerTool('ros-command', {
   inputSchema: {
     target: z.string(),
     command: z.string().describe('RouterOS CLI command to execute'),
-    dryRun: z.boolean().default(true).describe('If true (default), show command without executing'),
   },
+  annotations: { readOnlyHint: false, destructiveHint: true },
 });
 ```
 
-When `dryRun: true`, the response shows the command and target without executing. The LLM must explicitly pass `dryRun: false` to run mutating operations.
+The tool executes on the first call. Approving individual write calls belongs to the MCP client, which can enforce the decision and scope it per agent; the server-side control is `READ_ONLY=true`, which withholds the tool entirely.
 
 ### Decision: Fixture-Based Testing
 
@@ -556,7 +555,7 @@ tests/
 - Return `ToolResponse` (with `_meta` envelope) from every tool — no bare `JSON.stringify`
 - Never write a per-tool parser function — use `normalizeRecord` universally
 - Never add a dedicated write tool — all mutations go through `ros-command`
-- All write tool calls default to `dryRun: true`
+- Never implement an in-server confirmation step — write approval is the MCP client's responsibility
 - Fixture tests must exist for any parser change
 
 ### Implementation Handoff
@@ -772,7 +771,7 @@ REST has a 60-second hard timeout on the RouterOS side. Long-running diagnostic 
 | **11-2** Response Envelope & Metadata | `_meta` wrapper on all responses | **Unchanged** — still needed, transport-independent |
 | **11-3** Migrate All Tools to Universal Parser | Remove per-tool parsers | **Replaced** — becomes "Migrate all tools to `DeviceTransport` interface". Per-tool parsers are eliminated by using `transport.query()` which returns pre-parsed records. |
 | **11-4** Fleet Summary Mode | `level` param with grouping | **Unchanged** — transport-independent |
-| **11-5** Write Tool Consolidation & Dry-Run | `ros-command` with `dryRun` | **Unchanged** — transport-independent; REST makes dry-run even cleaner (show the HTTP request that would be sent) |
+| **11-5** Write Tool Consolidation | `ros-command` as the sole write tool | **Unchanged** — transport-independent |
 | **11-6** Fixture-Based Parser Tests | Real RouterOS output fixtures | **Modified** — REST fixtures are JSON (trivial to validate). SSH fixtures still useful for fallback path. Lower priority. |
 | **11-7** Runtime Schema Validation | Zod `.safeParse()` on outputs | **Unchanged** — transport-independent |
 
@@ -839,4 +838,4 @@ src/
 
 **Phase 3 (story 11-11):** Adapt diagnostic/action commands that don't fit the simple query/execute pattern.
 
-**Phase 4 (stories 11-2, 11-4, 11-5):** Response envelope, fleet summary, and dry-run — now built on the cleaner transport-agnostic foundation.
+**Phase 4 (stories 11-2, 11-4, 11-5):** Response envelope, fleet summary, and write tool consolidation — now built on the cleaner transport-agnostic foundation.

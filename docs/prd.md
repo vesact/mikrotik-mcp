@@ -70,7 +70,6 @@ Credential isolation is the #1 blocker to enterprise adoption of MikroTik AI too
 
 ### Phase 2 (Growth)
 
-- Dry-run / preview mode: show what a command would do before executing — critical risk reduction for destructive fleet-wide operations
 - Parallel SSH execution for fan-out calls — reduce latency on large fleets
 - Alternative credential backends: env-var-only mode; groundwork for HashiCorp Vault / 1Password
 
@@ -476,5 +475,5 @@ The device is partially responsive — SSH connects but one command times out. `
 
 ### Write Safety
 
-- **NFR-WRITE-1:** All mutating operations via `ros-command` default to `dryRun: true`. The response shows the exact command and target without executing. The caller must explicitly pass `dryRun: false` to execute.
-- **NFR-WRITE-2:** Dedicated per-resource write tools are removed in favour of the universal `ros-command` tool with dry-run protection.
+- **NFR-WRITE-1:** Dedicated per-resource write tools are removed in favour of the universal `ros-command` tool.
+- **NFR-WRITE-2:** Per-call approval of write operations is the MCP client's responsibility (per-tool approval / allow-lists). The server's control is `READ_ONLY=true`, which withholds write, execution, and active-diagnostic tools at registration time.
