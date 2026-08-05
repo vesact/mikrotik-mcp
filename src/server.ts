@@ -195,46 +195,31 @@ export async function createServer(): Promise<McpServer> {
   );
 
   // --- Tool: ros-command (uses SSH for arbitrary CLI execution) ---
+  //
+  // This tool has no built-in confirmation step. Approving individual write calls
+  // belongs to the MCP client (per-tool approval / allow-lists), which can enforce
+  // it and scope it per agent; a server-side prompt would only be advisory. The
+  // server-side control is READ_ONLY=true, which withholds this tool entirely.
   server.registerTool(
     'ros-command',
     {
       description:
         'Execute a raw RouterOS CLI command on one or all devices via SSH. ' +
-        'Dry-run is enabled by default: always call with dryRun=true first, then SHOW the user the command and affected devices from the response, ' +
-        'and ask for explicit confirmation before calling again with dryRun=false to execute.',
+        'WRITE/EXECUTE tool: the command runs verbatim on every device matched by `target` and may change configuration, ' +
+        'interrupt connectivity, or reboot hardware. There is no validation, preview, or rollback.',
       inputSchema: {
         target: z.string().describe("Device ID, comma-separated IDs, or 'all' for entire fleet"),
         command: z.string().describe('RouterOS CLI command to execute'),
-        dryRun: z
-          .boolean()
-          .default(true)
-          .describe('When true (default), shows what would be executed without running it'),
+      },
+      annotations: {
+        title: 'Run RouterOS command',
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: true,
       },
     },
-    async ({ target, command, dryRun }) => {
-      if (dryRun) {
-        // Resolve targets without executing — show what would happen
-        const credentials =
-          target === 'all'
-            ? await keepass.listDevices()
-            : await Promise.all(
-                target
-                  .split(',')
-                  .map((s) => s.trim())
-                  .filter((s) => s.length > 0)
-                  .map((id) => keepass.resolveCredentials(id)),
-              );
-        const targets = credentials.map((c) => c.deviceId);
-        return {
-          content: [
-            {
-              type: 'text' as const,
-              text: JSON.stringify({ dryRun: true, command, targets }, null, 2),
-            },
-          ],
-        };
-      }
-
+    async ({ target, command }) => {
       const deps: ToolDeps = { keepass, transport: sshTransport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => d.transport.raw(cred, command));
       return { content: [{ type: 'text' as const, text: JSON.stringify(results, null, 2) }] };
