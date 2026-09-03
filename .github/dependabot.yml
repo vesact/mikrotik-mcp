@@ -17,8 +17,17 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      # Action bumps are almost always mechanical; one PR per action is noise.
+      github-actions:
+        patterns: ['*']
+        update-types: [major, minor, patch]
 
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: weekly
+    groups:
+      docker:
+        patterns: ['*']
+        update-types: [minor, patch]
