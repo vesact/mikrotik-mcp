@@ -116,6 +116,18 @@ export class SshTransportImpl implements SshTransport {
     });
   }
 
+  /**
+   * Render an argument as `key=value` for the RouterOS CLI.
+   *
+   * Values are always double-quoted and backslash/quote-escaped. Quoting only
+   * values that contain a space lets a value carrying `;`, `$`, `[` or `"`
+   * terminate the argument and append a second CLI command.
+   */
+  private formatArg(key: string, value: string): string {
+    const escaped = value.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
+    return `${key}="${escaped}"`;
+  }
+
   /** Strip credential values from error messages to satisfy NFR-SEC-1. */
   private sanitize(message: string, credential: KeePassCredential): string {
     let sanitized = message;
@@ -149,10 +161,7 @@ export class SshTransportImpl implements SshTransport {
   ): Promise<unknown> {
     let command = path;
     if (args && Object.keys(args).length > 0) {
-      const parts = Object.entries(args).map(([k, v]) => {
-        if (v.includes(' ')) return `${k}="${v}"`;
-        return `${k}=${v}`;
-      });
+      const parts = Object.entries(args).map(([k, v]) => this.formatArg(k, v));
       command += ` ${parts.join(' ')}`;
     }
     const result = await this.executeCommand(credential, command);
@@ -166,10 +175,7 @@ export class SshTransportImpl implements SshTransport {
   ): Promise<string> {
     let fullCommand = command;
     if (body && Object.keys(body).length > 0) {
-      const parts = Object.entries(body).map(([k, v]) => {
-        if (v.includes(' ')) return `${k}="${v}"`;
-        return `${k}=${v}`;
-      });
+      const parts = Object.entries(body).map(([k, v]) => this.formatArg(k, v));
       fullCommand += ` ${parts.join(' ')}`;
     }
     return this.executeCommand(credential, fullCommand);

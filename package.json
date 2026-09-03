@@ -38,7 +38,8 @@
   "author": "Actemium Schweiz AG",
   "license": "Apache-2.0",
   "overrides": {
-    "@xmldom/xmldom": "^0.8.13"
+    "@xmldom/xmldom": "^0.8.13",
+    "esbuild": "^0.28.1"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

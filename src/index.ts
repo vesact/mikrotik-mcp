@@ -23,6 +23,30 @@ const transportType = process.env.MCP_TRANSPORT ?? 'stdio';
 const httpPort = parseInt(process.env.MCP_HTTP_PORT ?? '3000', 10);
 const httpHost = process.env.MCP_HOST ?? '0.0.0.0';
 
+/** Comma-separated env list → trimmed, non-empty entries. */
+function envList(name: string): string[] {
+  return (process.env[name] ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+const allowedHosts = envList('MCP_ALLOWED_HOSTS');
+const allowedOrigins = envList('MCP_ALLOWED_ORIGINS');
+
+/**
+ * DNS-rebinding protection for the HTTP transports.
+ *
+ * The HTTP endpoint has no built-in authentication (see SECURITY.md). Without a
+ * Host/Origin allow-list, any page in a browser on a machine that can reach the
+ * listener can drive the full tool set — including `ros-command` — against the
+ * fleet. Configure MCP_ALLOWED_HOSTS / MCP_ALLOWED_ORIGINS to close that path.
+ */
+const dnsRebindingOptions =
+  allowedHosts.length > 0 || allowedOrigins.length > 0
+    ? { enableDnsRebindingProtection: true, allowedHosts, allowedOrigins }
+    : {};
+
 /** Active transports keyed by session ID */
 const transports: Record<string, StreamableHTTPServerTransport | SSEServerTransport> = {};
 
@@ -118,6 +142,16 @@ async function main(): Promise<void> {
       `[mikrotik-mcp] Server running on http://${httpHost}:${httpPort}/mcp\n` +
         `[mikrotik-mcp] Legacy SSE available on /sse + /messages\n`,
     );
+    if (allowedHosts.length > 0 || allowedOrigins.length > 0) {
+      process.stderr.write(
+        `[mikrotik-mcp] DNS-rebinding protection ON — hosts: [${allowedHosts.join(', ')}] origins: [${allowedOrigins.join(', ')}]\n`,
+      );
+    } else {
+      process.stderr.write(
+        '[mikrotik-mcp] WARNING: HTTP transport has no authentication and no Host/Origin allow-list. ' +
+          'Set MCP_ALLOWED_HOSTS and/or MCP_ALLOWED_ORIGINS, and keep the listener on a trusted network.\n',
+      );
+    }
   });
 
   // Graceful shutdown
@@ -163,6 +197,7 @@ async function handleStreamableHttp(req: IncomingMessage, res: ServerResponse): 
     if (isInitializeRequest(body)) {
       // Bound to a const so the closures below see a non-optional transport.
       const created = new StreamableHTTPServerTransport({
+        ...dnsRebindingOptions,
         sessionIdGenerator: () => randomUUID(),
         onsessioninitialized: (sid) => {
           process.stderr.write(`[mikrotik-mcp] StreamableHTTP session: ${sid}\n`);
@@ -211,7 +246,7 @@ async function handleStreamableHttp(req: IncomingMessage, res: ServerResponse): 
 // ═══════════════════════════════════════════════════════════════════════════
 
 async function handleSseConnect(_req: IncomingMessage, res: ServerResponse): Promise<void> {
-  const transport = new SSEServerTransport('/messages', res);
+  const transport = new SSEServerTransport('/messages', res, dnsRebindingOptions);
   transports[transport.sessionId] = transport;
   process.stderr.write(`[mikrotik-mcp] SSE session: ${transport.sessionId}\n`);
 

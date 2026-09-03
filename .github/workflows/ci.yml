@@ -30,6 +30,9 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
   docker:
     runs-on: ubuntu-latest
     steps:

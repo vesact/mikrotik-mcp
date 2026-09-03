@@ -102,7 +102,11 @@ All configuration is via environment variables (see [`.env.example`](.env.exampl
 | `MCP_TRANSPORT` | `stdio` (`http` in the Docker image) | MCP transport |
 | `MCP_HTTP_PORT` | `3000` (`8000` in the Docker image) | HTTP listen port |
 | `MCP_HOST` | `0.0.0.0` | HTTP bind address |
+| `MCP_ALLOWED_HOSTS` | _(unset)_ | Comma-separated `host:port` allow-list for the `Host` header (DNS-rebinding protection) |
+| `MCP_ALLOWED_ORIGINS` | _(unset)_ | Comma-separated allow-list for the `Origin` header |
 | `READ_ONLY` | `false` | Expose only read-only state-query tools |
+
+When either `MCP_ALLOWED_HOSTS` or `MCP_ALLOWED_ORIGINS` is set, the HTTP transports reject requests whose `Host`/`Origin` headers are not on the list. Leaving both unset disables the check and the server logs a warning at startup — the HTTP endpoint itself has no authentication, so see [SECURITY.md](SECURITY.md) before exposing it.
 
 ### Read-only mode
 

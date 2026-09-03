@@ -273,7 +273,7 @@ describe('SshTransportImpl', () => {
 
       await promise;
       expect(mockClient.exec).toHaveBeenCalledWith(
-        '/ip/address/add address=10.0.0.5/24 interface=ether2',
+        '/ip/address/add address="10.0.0.5/24" interface="ether2"',
         expect.any(Function),
       );
     });
@@ -291,7 +291,7 @@ describe('SshTransportImpl', () => {
 
       await promise;
       expect(mockClient.exec).toHaveBeenCalledWith(
-        '/ip/address/set .id=*1 comment=test',
+        '/ip/address/set .id="*1" comment="test"',
         expect.any(Function),
       );
     });
@@ -309,7 +309,25 @@ describe('SshTransportImpl', () => {
 
       await promise;
       expect(mockClient.exec).toHaveBeenCalledWith(
-        '/ip/address/set .id=*1 comment="my comment"',
+        '/ip/address/set .id="*1" comment="my comment"',
+        expect.any(Function),
+      );
+    });
+
+    it('escapes quotes and backslashes so a value cannot append a second command', async () => {
+      const transport = createTransport();
+
+      const promise = transport.execute(testCredential, '/ip/address/set', {
+        '.id': '*1',
+        comment: 'x" ; /system reboot; :put "',
+      });
+
+      setupSuccessfulExec('');
+      mockClient.emit('ready');
+
+      await promise;
+      expect(mockClient.exec).toHaveBeenCalledWith(
+        '/ip/address/set .id="*1" comment="x\\" ; /system reboot; :put \\""',
         expect.any(Function),
       );
     });
@@ -326,7 +344,7 @@ describe('SshTransportImpl', () => {
 
       await promise;
       expect(mockClient.exec).toHaveBeenCalledWith(
-        '/ip/address/remove .id=*1',
+        '/ip/address/remove .id="*1"',
         expect.any(Function),
       );
     });
@@ -359,7 +377,7 @@ describe('SshTransportImpl', () => {
 
       await promise;
       expect(mockClient.exec).toHaveBeenCalledWith(
-        '/ping address=8.8.8.8 count=4',
+        '/ping address="8.8.8.8" count="4"',
         expect.any(Function),
       );
     });
