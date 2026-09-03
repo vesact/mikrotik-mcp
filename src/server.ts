@@ -4,6 +4,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { createRequire } from 'node:module';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { fanOut } from './fan-out.js';
@@ -26,6 +27,14 @@ import { registerPppUserTools } from './tools/ppp-user.js';
 import { registerSetupTools } from './tools/setup.js';
 import { registerSystemTools } from './tools/system.js';
 import type { DeviceTransport, ToolDeps } from './types/index.js';
+
+/**
+ * Version reported to MCP clients, read from package.json so it never drifts
+ * from the published release. The Dockerfile copies package.json next to
+ * dist/, and in development the path resolves from src/ — both land on the
+ * project manifest.
+ */
+const VERSION = (createRequire(import.meta.url)('../package.json') as { version: string }).version;
 
 /**
  * Tools exposed when READ_ONLY mode is enabled.
@@ -134,7 +143,7 @@ export async function createServer(): Promise<McpServer> {
   const sshTransport: DeviceTransport = new SshTransportImpl({ acceptAllHostKeys: true });
 
   // --- MCP Server ---
-  const server = new McpServer({ name: 'mikrotik-mcp', version: '1.0.0' });
+  const server = new McpServer({ name: 'mikrotik-mcp', version: VERSION });
 
   // --- READ_ONLY mode ---
   // When enabled, wrap registerTool so only allow-listed read-only tools are

@@ -1,6 +1,6 @@
 {
   "name": "mikrotik-mcp",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "MCP server for managing MikroTik RouterOS devices — 65 tools over the RouterOS REST API with SSH fallback, KeePass-backed credentials, multi-device fan-out, and a read-only mode.",
   "main": "dist/index.js",
   "type": "module",
