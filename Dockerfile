@@ -1,5 +1,5 @@
 # --- Build stage ---
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 
 # argon2 + cpu-features need native compilation
 RUN apk add --no-cache python3 make g++
@@ -17,7 +17,7 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # --- Runtime stage ---
-FROM node:22-alpine
+FROM node:26-alpine
 
 # argon2 native addon needs libstdc++ at runtime
 RUN apk add --no-cache libstdc++
