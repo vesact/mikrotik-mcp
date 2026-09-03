@@ -8,7 +8,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  # Matrix legs report as "test-matrix (22)" / "test-matrix (24)". Branch
+  # protection requires a stable check name, so the `test` job below
+  # aggregates them — adding or dropping a Node version never needs a
+  # change to the protection rules.
+  test-matrix:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -38,6 +42,18 @@ jobs:
 
       - name: Dependency audit
         run: npm audit --audit-level=high
+
+  test:
+    runs-on: ubuntu-latest
+    needs: test-matrix
+    if: always()
+    steps:
+      - name: Verify every matrix leg passed
+        run: |
+          if [ "${{ needs.test-matrix.result }}" != "success" ]; then
+            echo "test-matrix result: ${{ needs.test-matrix.result }}"
+            exit 1
+          fi
 
   docker:
     runs-on: ubuntu-latest
