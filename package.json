@@ -45,7 +45,7 @@
     "argon2": "^0.45.1",
     "kdbxweb": "^2.1.1",
     "ssh2": "^1.17.0",
-    "zod": "^4.5.4"
+    "zod": "^4.6.4"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.11",
