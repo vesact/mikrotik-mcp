@@ -11,10 +11,18 @@ updates:
       - dependency-name: "@types/node"
         update-types: [version-update:semver-major]
     groups:
+      # Security updates arrive one PR per advisory by default. They cluster —
+      # three landed on the same day from one transitive tree — and each one
+      # rewrites the same lockfile, so they are grouped into a single PR.
+      security:
+        applies-to: security-updates
+        patterns: ['*']
       dev-dependencies:
+        applies-to: version-updates
         dependency-type: development
         update-types: [minor, patch]
       production-minor-patch:
+        applies-to: version-updates
         dependency-type: production
         update-types: [minor, patch]
 
@@ -25,6 +33,7 @@ updates:
     groups:
       # Action bumps are almost always mechanical; one PR per action is noise.
       github-actions:
+        applies-to: version-updates
         patterns: ['*']
         update-types: [major, minor, patch]
 
@@ -34,6 +43,7 @@ updates:
       interval: weekly
     groups:
       docker:
+        applies-to: version-updates
         patterns: ['*']
         update-types: [minor, patch]
     ignore:
