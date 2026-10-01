@@ -1,11 +1,11 @@
 {
   "name": "mikrotik-mcp",
   "version": "2.0.0",
-  "description": "MCP server for managing MikroTik RouterOS devices — 65 tools over the RouterOS REST API with SSH fallback, KeePass-backed credentials, multi-device fan-out, and a read-only mode.",
+  "description": "MCP server for managing MikroTik RouterOS devices \u2014 65 tools over the RouterOS REST API with SSH fallback, KeePass-backed credentials, multi-device fan-out, and a read-only mode.",
   "main": "dist/index.js",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
     "build": "tsc",
@@ -41,18 +41,18 @@
     "@xmldom/xmldom": "^0.8.13"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.31.0",
     "argon2": "^0.45.1",
     "kdbxweb": "^2.1.1",
     "ssh2": "^1.17.0",
-    "zod": "^4.5.4"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.11",
+    "@biomejs/biome": "2.5.14",
     "@types/node": "^24.13.3",
     "@types/ssh2": "^1.15.5",
-    "tsx": "^4.23.13",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.3"
   }
 }
