@@ -41,15 +41,15 @@
     "@xmldom/xmldom": "^0.8.13"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.31.0",
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "argon2": "^0.45.1",
     "kdbxweb": "^2.1.1",
     "ssh2": "^1.17.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
-    "@types/node": "^24.19.0",
+    "@biomejs/biome": "2.5.15",
+    "@types/node": "^24.19.1",
     "@types/ssh2": "^1.15.5",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
