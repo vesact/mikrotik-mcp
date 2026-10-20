@@ -1,6 +1,9 @@
-import { dirname, resolve } from 'node:path';
+import { chmod, copyFile, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { beforeAll, describe, expect, it } from 'vitest';
+import kdbxweb from 'kdbxweb';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { KeePassClientImpl } from '../../../src/keepass/keepass-client.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -76,6 +79,98 @@ describe('KeePassClientImpl', () => {
       await expect(client.resolveCredentials('NonExistent-Device')).rejects.toThrow(
         /device.*not found/i,
       );
+    });
+  });
+
+  describe('createEntry()', () => {
+    let workDir: string;
+    let vaultPath: string;
+
+    const entry = (deviceId: string) => ({
+      deviceId,
+      username: 'admin',
+      password: `pw-${deviceId}`,
+      hostname: '192.0.2.1',
+    });
+
+    beforeEach(async () => {
+      workDir = await mkdtemp(join(tmpdir(), 'keepass-test-'));
+      vaultPath = join(workDir, 'vault.kdbx');
+      await copyFile(TEST_VAULT_PATH, vaultPath);
+    });
+
+    afterEach(async () => {
+      await rm(workDir, { recursive: true, force: true });
+    });
+
+    it('persists the entry so a fresh client can resolve it', async () => {
+      const writer = new KeePassClientImpl(vaultPath, TEST_PASSWORD, TEST_GROUP);
+      await writer.open();
+      await writer.createEntry(entry('Router-03'));
+
+      const reader = new KeePassClientImpl(vaultPath, TEST_PASSWORD, TEST_GROUP);
+      await reader.open();
+      const cred = await reader.resolveCredentials('Router-03');
+      expect(cred.password).toBe('pw-Router-03');
+      expect(await reader.listDevices()).toHaveLength(4);
+    });
+
+    it('keeps both entries when two writers save at the same time', async () => {
+      const a = new KeePassClientImpl(vaultPath, TEST_PASSWORD, TEST_GROUP);
+      const b = new KeePassClientImpl(vaultPath, TEST_PASSWORD, TEST_GROUP);
+      await a.open();
+      await b.open();
+
+      await Promise.all([a.createEntry(entry('Router-03')), b.createEntry(entry('Router-04'))]);
+
+      const ids = (await a.listDevices()).map((d) => d.deviceId);
+      expect(ids).toEqual(expect.arrayContaining(['Router-03', 'Router-04']));
+      expect(ids).toHaveLength(5);
+    });
+
+    it('re-applies its entry when another process saved in the meantime', async () => {
+      // Build the "other process" version of the vault: fixture + Router-04.
+      const otherPath = join(workDir, 'other.kdbx');
+      await copyFile(TEST_VAULT_PATH, otherPath);
+      const other = new KeePassClientImpl(otherPath, TEST_PASSWORD, TEST_GROUP);
+      await other.open();
+      await other.createEntry(entry('Router-04'));
+      const otherBytes = await readFile(otherPath);
+
+      // That save lands on disk while our first save is still running.
+      const realSave = kdbxweb.Kdbx.prototype.save;
+      const save = vi.spyOn(kdbxweb.Kdbx.prototype, 'save').mockImplementationOnce(async function (
+        this: kdbxweb.Kdbx,
+      ) {
+        const out = await realSave.call(this);
+        await writeFile(vaultPath, otherBytes);
+        return out;
+      });
+
+      const client = new KeePassClientImpl(vaultPath, TEST_PASSWORD, TEST_GROUP);
+      await client.open();
+      await client.createEntry(entry('Router-03'));
+      save.mockRestore();
+
+      const ids = (await client.listDevices()).map((d) => d.deviceId);
+      expect(ids).toEqual(expect.arrayContaining(['Router-03', 'Router-04']));
+      expect(ids).toHaveLength(5);
+    });
+
+    it('replaces the vault atomically, keeping its mode and leaving no temp file', async () => {
+      await chmod(vaultPath, 0o600);
+      const client = new KeePassClientImpl(vaultPath, TEST_PASSWORD, TEST_GROUP);
+      await client.open();
+      await client.createEntry(entry('Router-03'));
+
+      expect((await stat(vaultPath)).mode & 0o777).toBe(0o600);
+      expect(await readdir(workDir)).toEqual(['vault.kdbx']);
+    });
+
+    it('refuses a duplicate title', async () => {
+      const client = new KeePassClientImpl(vaultPath, TEST_PASSWORD, TEST_GROUP);
+      await client.open();
+      await expect(client.createEntry(entry('Router-01'))).rejects.toThrow('already exists');
     });
   });
 

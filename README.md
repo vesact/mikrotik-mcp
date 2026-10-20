@@ -40,13 +40,21 @@ Create a KeePass vault (e.g. `config/vault.kdbx`) with one entry per device insi
 - **Username / Password** → RouterOS credentials
 - **URL** → device hostname or IP
 
+The server re-reads the vault on every tool call, so entries you add or edit by hand are picked up without a restart. `setup-new-device` writes to it, which needs three things:
+
+- **Mount the directory, read-write.** The server saves to a temp file in the same directory and renames it over the vault, so a reader never sees a half-written file. Mounting the vault file on its own still works, but the save then happens in place.
+- **Don't leave a desktop KeePass with stale contents open.** Before saving, the server checks that nobody changed the file since it read it, and re-applies its entry on top if they did. A desktop client works the other way: it keeps its own copy in memory, and if it saves without reloading, it erases the entries the server added. Close it during setup, or make sure it reloads the file when it changes on disk before you save.
+- **Edit the same file the container mounts.** If you edit a copy synced by Nextcloud, Syncthing or similar, you end up with two vaults that drift apart.
+
+If the vault can't be written, `setup-new-device` resets the device's admin password back to empty and reports a recoverable failure, so you can fix the mount and run it again.
+
 ### 2. Run with Docker (shared HTTP server)
 
 Using the prebuilt image:
 
 ```bash
 docker run -d -p 8000:8000 \
-  -v ./config:/config:ro \
+  -v ./config:/config \
   -e KEEPASS_PASSWORD='…' \
   ghcr.io/vesact/mikrotik-mcp:latest   # serves MCP on http://localhost:8000/mcp
 ```
