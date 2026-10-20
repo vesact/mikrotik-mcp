@@ -8,7 +8,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { fanOut } from '../fan-out.js';
 import { normalizeRecord, parseDetailRecords, parseKeyValue } from '../parsers.js';
-import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
+import type { CredentialProvider, DeviceTransport, ToolDeps } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Parsers (pure functions — independently unit-testable)
@@ -42,7 +42,7 @@ export function parseWatchdog(raw: string): Record<string, unknown> {
 /** Register system health and hardware tools on the MCP server. */
 export function registerHealthTools(
   server: McpServer,
-  keepass: KeePassClient,
+  provider: CredentialProvider,
   transport: DeviceTransport,
 ): void {
   // --- system-health-get ---
@@ -56,7 +56,7 @@ export function registerHealthTools(
       },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/system/health');
       });
@@ -74,7 +74,7 @@ export function registerHealthTools(
       },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         const records = await d.transport.query(cred, '/system/routerboard');
         return records[0] ?? {};
@@ -93,7 +93,7 @@ export function registerHealthTools(
       },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         const records = await d.transport.query(cred, '/system/watchdog');
         return records[0] ?? {};

@@ -1,29 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fanOut } from '../../src/fan-out.js';
 import type {
+  CredentialProvider,
+  DeviceCredential,
   DeviceTransport,
-  KeePassClient,
-  KeePassCredential,
   ToolDeps,
 } from '../../src/types/index.js';
 
 // --- Test data ---
 
-const router01: KeePassCredential = {
+const router01: DeviceCredential = {
   deviceId: 'Router-01',
   username: 'admin',
   password: 'secret1',
   hostname: '192.168.1.1',
 };
 
-const router02: KeePassCredential = {
+const router02: DeviceCredential = {
   deviceId: 'Router-02',
   username: 'admin',
   password: 'secret2',
   hostname: '192.168.1.2',
 };
 
-const switch01: KeePassCredential = {
+const switch01: DeviceCredential = {
   deviceId: 'Switch-01',
   username: 'operator',
   password: 'secret3',
@@ -35,14 +35,14 @@ const allDevices = [router01, router02, switch01];
 // --- Mock factory ---
 
 function createMockDeps(): ToolDeps & {
-  keepass: { [K in keyof KeePassClient]: ReturnType<typeof vi.fn> };
+  provider: { [K in keyof CredentialProvider]: ReturnType<typeof vi.fn> };
   transport: { [K in keyof DeviceTransport]: ReturnType<typeof vi.fn> };
 } {
   return {
-    keepass: {
-      listDevices: vi.fn<[], Promise<KeePassCredential[]>>().mockResolvedValue(allDevices),
+    provider: {
+      listDevices: vi.fn<[], Promise<DeviceCredential[]>>().mockResolvedValue(allDevices),
       resolveCredentials: vi
-        .fn<[string], Promise<KeePassCredential>>()
+        .fn<[string], Promise<DeviceCredential>>()
         .mockImplementation(async (deviceId: string) => {
           const found = allDevices.find((d) => d.deviceId === deviceId);
           if (!found) throw new Error(`Device "${deviceId}" not found in group`);
@@ -50,9 +50,9 @@ function createMockDeps(): ToolDeps & {
         }),
     },
     transport: {
-      query: vi.fn<[KeePassCredential, string], Promise<Record<string, string>[]>>(),
+      query: vi.fn<[DeviceCredential, string], Promise<Record<string, string>[]>>(),
       execute: vi.fn(),
-      raw: vi.fn<[KeePassCredential, string], Promise<string>>(),
+      raw: vi.fn<[DeviceCredential, string], Promise<string>>(),
     },
     sessionId: 'test-session',
   };
@@ -72,7 +72,7 @@ describe('fanOut', () => {
 
       const results = await fanOut(deps, 'all', callback);
 
-      expect(deps.keepass.listDevices).toHaveBeenCalledOnce();
+      expect(deps.provider.listDevices).toHaveBeenCalledOnce();
       expect(callback).toHaveBeenCalledTimes(3);
       expect(callback).toHaveBeenCalledWith(router01, deps);
       expect(callback).toHaveBeenCalledWith(router02, deps);
@@ -92,8 +92,8 @@ describe('fanOut', () => {
 
       const results = await fanOut(deps, 'Router-01', callback);
 
-      expect(deps.keepass.resolveCredentials).toHaveBeenCalledWith('Router-01');
-      expect(deps.keepass.listDevices).not.toHaveBeenCalled();
+      expect(deps.provider.resolveCredentials).toHaveBeenCalledWith('Router-01');
+      expect(deps.provider.listDevices).not.toHaveBeenCalled();
       expect(callback).toHaveBeenCalledOnce();
       expect(callback).toHaveBeenCalledWith(router01, deps);
       expect(results).toEqual([
@@ -108,10 +108,10 @@ describe('fanOut', () => {
 
       const results = await fanOut(deps, 'Router-01,Router-02', callback);
 
-      expect(deps.keepass.resolveCredentials).toHaveBeenCalledTimes(2);
-      expect(deps.keepass.resolveCredentials).toHaveBeenCalledWith('Router-01');
-      expect(deps.keepass.resolveCredentials).toHaveBeenCalledWith('Router-02');
-      expect(deps.keepass.listDevices).not.toHaveBeenCalled();
+      expect(deps.provider.resolveCredentials).toHaveBeenCalledTimes(2);
+      expect(deps.provider.resolveCredentials).toHaveBeenCalledWith('Router-01');
+      expect(deps.provider.resolveCredentials).toHaveBeenCalledWith('Router-02');
+      expect(deps.provider.listDevices).not.toHaveBeenCalled();
       expect(callback).toHaveBeenCalledTimes(2);
       expect(results).toHaveLength(2);
       expect(results).toEqual([
@@ -160,7 +160,7 @@ describe('fanOut', () => {
 
   describe('partial failure handling', () => {
     it('returns success for working devices and error for failed devices', async () => {
-      const callback = vi.fn().mockImplementation(async (cred: KeePassCredential) => {
+      const callback = vi.fn().mockImplementation(async (cred: DeviceCredential) => {
         if (cred.deviceId === 'Router-02') {
           throw new Error('connect ECONNREFUSED 192.168.1.2:22');
         }
@@ -198,7 +198,7 @@ describe('fanOut', () => {
 
   describe('vault-level errors', () => {
     it('propagates listDevices errors (vault not opened)', async () => {
-      deps.keepass.listDevices.mockRejectedValue(new Error('Vault not opened'));
+      deps.provider.listDevices.mockRejectedValue(new Error('Vault not opened'));
 
       await expect(fanOut(deps, 'all', vi.fn())).rejects.toThrow('Vault not opened');
     });
@@ -206,7 +206,7 @@ describe('fanOut', () => {
 
   describe('credential security', () => {
     it('error messages in DeviceResult never contain credential values', async () => {
-      const callback = vi.fn().mockImplementation(async (cred: KeePassCredential) => {
+      const callback = vi.fn().mockImplementation(async (cred: DeviceCredential) => {
         // Simulate error that pathologically contains credentials
         throw new Error(`Auth failed: user=${cred.username} password=${cred.password}`);
       });
@@ -224,9 +224,9 @@ describe('fanOut', () => {
   });
 
   describe('callback receives correct credentials', () => {
-    it('passes the matching KeePassCredential to each callback invocation', async () => {
-      const receivedCreds: KeePassCredential[] = [];
-      const callback = vi.fn().mockImplementation(async (cred: KeePassCredential) => {
+    it('passes the matching DeviceCredential to each callback invocation', async () => {
+      const receivedCreds: DeviceCredential[] = [];
+      const callback = vi.fn().mockImplementation(async (cred: DeviceCredential) => {
         receivedCreds.push(cred);
         return 'ok';
       });

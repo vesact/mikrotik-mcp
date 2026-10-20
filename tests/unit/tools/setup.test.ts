@@ -49,7 +49,7 @@ vi.mock('../../../src/rest/rest-transport.js', () => ({
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { generatePassword, registerSetupTools } from '../../../src/tools/setup.js';
-import type { DeviceTransport, KeePassClient } from '../../../src/types/index.js';
+import type { CredentialProvider, DeviceTransport } from '../../../src/types/index.js';
 
 // --- Helpers ---
 
@@ -122,7 +122,7 @@ describe('generatePassword', () => {
 
 describe('registerSetupTools', () => {
   let server: McpServer;
-  let mockKeepass: KeePassClient;
+  let mockKeepass: CredentialProvider;
   let mockTransport: DeviceTransport;
 
   beforeEach(() => {
@@ -352,7 +352,7 @@ describe('registerSetupTools', () => {
       expect(parsed.recoverable).toBe(true);
     });
 
-    it('step 6 (keepass) — rolls the admin password back and returns recoverable failure', async () => {
+    it('step 6 (provider) — rolls the admin password back and returns recoverable failure', async () => {
       registerSetupTools(server, mockKeepass, mockTransport);
       const handler = getHandler(server);
 
@@ -385,7 +385,7 @@ describe('registerSetupTools', () => {
       expect(params).toEqual({ '.id': '*1', password: '' });
     });
 
-    it('step 6 (keepass) — logs the password server-side when the rollback also fails', async () => {
+    it('step 6 (provider) — logs the password server-side when the rollback also fails', async () => {
       registerSetupTools(server, mockKeepass, mockTransport);
       const handler = getHandler(server);
       const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { DeviceTransport, KeePassClient } from '../../../src/types/index.js';
+import type { CredentialProvider, DeviceTransport } from '../../../src/types/index.js';
 
 const { mockListDevices, mockResolveCredentials, mockFanOut } = vi.hoisted(() => ({
   mockListDevices: vi.fn(),
@@ -96,7 +96,7 @@ describe('parseDnsStatic', () => {
 
 describe('registerDhcpDnsTools', () => {
   let server: McpServer;
-  let mockKeepass: KeePassClient;
+  let mockKeepass: CredentialProvider;
   let mockTransport: DeviceTransport;
 
   beforeEach(() => {

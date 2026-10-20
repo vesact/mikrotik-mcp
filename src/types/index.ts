@@ -10,17 +10,20 @@ export type DeviceResult = {
   error?: string;
 };
 
-/** Resolved device credentials from KeePass vault. */
-export type KeePassCredential = {
+/** Resolved device credentials from the active credential provider. */
+export type DeviceCredential = {
   deviceId: string;
   username: string;
   password: string;
   hostname: string;
-  /** Optional notes/comment from the KeePass entry. */
+  /** Optional free-text notes (e.g. the KeePass entry's Notes field). */
   notes: string;
 };
 
-/** Parameters for creating a new KeePass entry. */
+/** @deprecated Use {@link DeviceCredential}. */
+export type KeePassCredential = DeviceCredential;
+
+/** Parameters for storing credentials of a newly set-up device. */
 export type CreateEntryParams = {
   deviceId: string;
   username: string;
@@ -29,16 +32,23 @@ export type CreateEntryParams = {
   notes?: string;
 };
 
-/** KeePass client interface. */
-export interface KeePassClient {
-  listDevices(): Promise<KeePassCredential[]>;
-  resolveCredentials(deviceId: string): Promise<KeePassCredential>;
-  createEntry(params: CreateEntryParams): Promise<void>;
+/** Where device inventory and credentials come from (KeePass vault, env vars, file). */
+export interface CredentialProvider {
+  listDevices(): Promise<DeviceCredential[]>;
+  resolveCredentials(deviceId: string): Promise<DeviceCredential>;
+  /**
+   * Persists credentials for a new device. Only present on providers that can
+   * write; setup-new-device is withheld when it is missing.
+   */
+  createEntry?(params: CreateEntryParams): Promise<void>;
 }
+
+/** @deprecated Use {@link CredentialProvider}. */
+export type KeePassClient = CredentialProvider;
 
 /** SSH transport interface (extends DeviceTransport with legacy executeCommand). */
 export interface SshTransport extends DeviceTransport {
-  executeCommand(credential: KeePassCredential, command: string): Promise<string>;
+  executeCommand(credential: DeviceCredential, command: string): Promise<string>;
 }
 
 /** SSH error — base class for all SSH-related errors. */
@@ -76,16 +86,16 @@ export type RosRecord = Record<string, string>;
 /** Transport-agnostic interface for communicating with RouterOS devices. */
 export interface DeviceTransport {
   /** Query a resource path and return all matching records. */
-  query(credential: KeePassCredential, path: string): Promise<RosRecord[]>;
+  query(credential: DeviceCredential, path: string): Promise<RosRecord[]>;
   /** Execute a command (add/set/remove) on the device. */
   execute(
-    credential: KeePassCredential,
+    credential: DeviceCredential,
     path: string,
     args?: Record<string, string>,
     options?: { method?: 'PUT' | 'PATCH' | 'DELETE' | 'POST' },
   ): Promise<unknown>;
   /** Execute a raw command and return the stringified JSON response. */
-  raw(credential: KeePassCredential, path: string, body?: Record<string, string>): Promise<string>;
+  raw(credential: DeviceCredential, path: string, body?: Record<string, string>): Promise<string>;
 }
 
 /** REST API error with device context. */
@@ -105,7 +115,7 @@ export class RestError extends Error {
 
 /** Dependency injection container passed to every tool handler. */
 export interface ToolDeps {
-  keepass: KeePassClient;
+  provider: CredentialProvider;
   transport: DeviceTransport;
   sessionId: string;
 }

@@ -4,10 +4,10 @@
  *
  * Architectural mandate: always use Promise.allSettled, never Promise.all.
  */
-import type { DeviceResult, KeePassCredential, ToolDeps } from './types/index.js';
+import type { DeviceCredential, DeviceResult, ToolDeps } from './types/index.js';
 
 /** Callback executed per device during fan-out. */
-export type DeviceCallback = (credential: KeePassCredential, deps: ToolDeps) => Promise<unknown>;
+export type DeviceCallback = (credential: DeviceCredential, deps: ToolDeps) => Promise<unknown>;
 
 /**
  * Resolve target to device credentials and execute callback per device.
@@ -25,22 +25,22 @@ export async function fanOut(
   target: string,
   callback: DeviceCallback,
 ): Promise<DeviceResult[]> {
-  let credentials: KeePassCredential[];
+  let credentials: DeviceCredential[];
 
   if (target === 'all') {
-    credentials = await deps.keepass.listDevices();
+    credentials = await deps.provider.listDevices();
   } else {
     // Split on comma to support multi-target: "R1,R2,R3"
     const ids = target
       .split(',')
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
-    const resolved: KeePassCredential[] = [];
+    const resolved: DeviceCredential[] = [];
     const failed: DeviceResult[] = [];
 
     for (const id of ids) {
       try {
-        resolved.push(await deps.keepass.resolveCredentials(id));
+        resolved.push(await deps.provider.resolveCredentials(id));
       } catch (err: unknown) {
         failed.push({
           deviceId: id,
@@ -65,7 +65,7 @@ export async function fanOut(
 /** Execute callback per device using Promise.allSettled (architecture mandate). */
 async function executeAll(
   deps: ToolDeps,
-  credentials: KeePassCredential[],
+  credentials: DeviceCredential[],
   callback: DeviceCallback,
 ): Promise<DeviceResult[]> {
   const results = await Promise.allSettled(credentials.map((cred) => callback(cred, deps)));
@@ -84,7 +84,7 @@ async function executeAll(
 }
 
 /** Strip credential values from error messages (NFR-SEC-1). */
-function sanitizeError(err: unknown, credential: KeePassCredential): string {
+function sanitizeError(err: unknown, credential: DeviceCredential): string {
   const message = err instanceof Error ? err.message : String(err);
   let sanitized = message;
   if (credential.password) {

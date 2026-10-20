@@ -8,7 +8,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { fanOut } from '../fan-out.js';
 import { normalizeRecord, parseDetailRecords, parseKeyValue } from '../parsers.js';
-import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
+import type { CredentialProvider, DeviceTransport, ToolDeps } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Parsers
@@ -54,7 +54,7 @@ export function parseScripts(raw: string): Record<string, unknown>[] {
 
 export function registerPppUserTools(
   server: McpServer,
-  keepass: KeePassClient,
+  provider: CredentialProvider,
   transport: DeviceTransport,
 ): void {
   server.registerTool(
@@ -64,7 +64,7 @@ export function registerPppUserTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ppp/profile');
       });
@@ -79,7 +79,7 @@ export function registerPppUserTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ppp/secret');
       });
@@ -94,7 +94,7 @@ export function registerPppUserTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ppp/active');
       });
@@ -109,7 +109,7 @@ export function registerPppUserTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         const records = await d.transport.query(cred, '/ppp/aaa');
         return records[0] ?? {};
@@ -125,7 +125,7 @@ export function registerPppUserTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/user');
       });
@@ -140,7 +140,7 @@ export function registerPppUserTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/system/scheduler');
       });
@@ -155,7 +155,7 @@ export function registerPppUserTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/system/logging');
       });
@@ -170,7 +170,7 @@ export function registerPppUserTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/system/script');
       });

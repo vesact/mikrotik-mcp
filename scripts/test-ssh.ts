@@ -19,10 +19,10 @@ const VAULT_GROUP = 'Mikrotik-CHR';
 async function main() {
   // 1. Open vault and list devices
   console.log(`Opening vault: ${VAULT_PATH}`);
-  const keepass = new KeePassClientImpl(VAULT_PATH, VAULT_PASSWORD, VAULT_GROUP);
-  await keepass.open();
+  const provider = new KeePassClientImpl(VAULT_PATH, VAULT_PASSWORD, VAULT_GROUP);
+  await provider.open();
 
-  const devices = await keepass.listDevices();
+  const devices = await provider.listDevices();
   console.log(`Found ${devices.length} device(s):`);
   for (const d of devices) {
     console.log(`  - ${d.deviceId} @ ${d.hostname}`);

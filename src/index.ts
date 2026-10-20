@@ -84,7 +84,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // Pre-create the MCP server (opens KeePass vault once, fail-fast).
+  // Pre-create the MCP server (opens the credential provider once, fail-fast).
   // Each transport session connects its own server instance so sessions are isolated.
 
   // ── HTTP mode ──────────────────────────────────────────────────────────

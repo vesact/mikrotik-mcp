@@ -10,7 +10,7 @@ import { randomBytes } from 'node:crypto';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { RestTransportImpl } from '../rest/rest-transport.js';
-import type { DeviceTransport, KeePassClient, KeePassCredential } from '../types/index.js';
+import type { CredentialProvider, DeviceCredential, DeviceTransport } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Password generation
@@ -53,12 +53,22 @@ type SetupFailure = {
 };
 type SetupResult = SetupSuccess | SetupFailure;
 
+type WritableCredentialProvider = CredentialProvider &
+  Required<Pick<CredentialProvider, 'createEntry'>>;
+
+/** Whether the provider can persist credentials, which setup-new-device requires. */
+export function supportsWrite(
+  provider: CredentialProvider,
+): provider is WritableCredentialProvider {
+  return typeof provider.createEntry === 'function';
+}
+
 // ---------------------------------------------------------------------------
 // Core setup logic
 // ---------------------------------------------------------------------------
 
 async function setupDevice(
-  keepass: KeePassClient,
+  provider: WritableCredentialProvider,
   ip: string,
   identity: string,
   notes?: string,
@@ -82,7 +92,7 @@ async function setupDevice(
     : initial;
 
   // Synthetic credential — fresh CHR has admin with no password
-  const noPassCred: KeePassCredential = {
+  const noPassCred: DeviceCredential = {
     deviceId: identity,
     username: 'admin',
     password: '',
@@ -157,7 +167,7 @@ async function setupDevice(
   }
 
   // --- Step 6: Store credentials in KeePass ---
-  const newCred: KeePassCredential = {
+  const newCred: DeviceCredential = {
     deviceId: identity,
     username: 'admin',
     password,
@@ -165,7 +175,7 @@ async function setupDevice(
     notes: notes ?? '',
   };
   try {
-    await keepass.createEntry({
+    await provider.createEntry({
       deviceId: identity,
       username: 'admin',
       password,
@@ -220,12 +230,17 @@ async function setupDevice(
 // Tool registration
 // ---------------------------------------------------------------------------
 
-/** Register the setup-new-device tool on the MCP server. */
+/**
+ * Register the setup-new-device tool on the MCP server.
+ * Skipped when the provider is read-only: there would be nowhere to store the password.
+ */
 export function registerSetupTools(
   server: McpServer,
-  keepass: KeePassClient,
+  provider: CredentialProvider,
   _transport: DeviceTransport,
 ): void {
+  if (!supportsWrite(provider)) return;
+
   server.registerTool(
     'setup-new-device',
     {
@@ -248,7 +263,7 @@ export function registerSetupTools(
       },
     },
     async ({ ip, identity, notes }) => {
-      const result = await setupDevice(keepass, ip, identity, notes);
+      const result = await setupDevice(provider, ip, identity, notes);
       return {
         content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],
       };

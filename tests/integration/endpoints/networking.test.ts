@@ -2,13 +2,13 @@
  * Integration tests — Networking endpoints (IP, ARP, Routes, Interfaces, Bridge).
  */
 import { beforeAll, describe, expect, it } from 'vitest';
-import type { DeviceTransport, KeePassCredential } from '../../../src/types/index.js';
+import type { DeviceCredential, DeviceTransport } from '../../../src/types/index.js';
 import { loadTestConfig, requireDevices, type TestDevice } from '../config.js';
 import { assertHasKeys, createTransport, toCredential } from '../helpers.js';
 
 let device: TestDevice;
 let transport: DeviceTransport;
-let cred: KeePassCredential;
+let cred: DeviceCredential;
 
 beforeAll(() => {
   const config = loadTestConfig();

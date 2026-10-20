@@ -8,7 +8,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { fanOut } from '../fan-out.js';
 import { normalizeRecord, parseDetailRecords } from '../parsers.js';
-import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
+import type { CredentialProvider, DeviceTransport, ToolDeps } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Parsers
@@ -51,7 +51,7 @@ export function parseFiles(raw: string): Record<string, unknown>[] {
 
 export function registerLogTools(
   server: McpServer,
-  keepass: KeePassClient,
+  provider: CredentialProvider,
   transport: DeviceTransport,
 ): void {
   server.registerTool(
@@ -64,7 +64,7 @@ export function registerLogTools(
       },
     },
     async ({ target, topics }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         const records = await d.transport.query(cred, '/log');
         if (topics) {
@@ -89,7 +89,7 @@ export function registerLogTools(
       },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/file');
       });

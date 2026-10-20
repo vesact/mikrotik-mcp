@@ -1,14 +1,14 @@
 /**
  * MCP server setup — REST-first with SSH fallback for raw CLI commands.
- * Instantiates KeePass + transport dependencies, registers tools, returns wired McpServer.
+ * Instantiates the credential provider + transport dependencies, registers tools, returns wired McpServer.
  */
 
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { createCredentialProvider } from './credentials/index.js';
 import { fanOut } from './fan-out.js';
-import { KeePassClientImpl } from './keepass/keepass-client.js';
 import { RestTransportImpl } from './rest/rest-transport.js';
 import { SshTransportImpl } from './ssh/ssh-transport.js';
 import { registerAdminTools } from './tools/admin.js';
@@ -24,7 +24,7 @@ import { registerLogTools } from './tools/log.js';
 import { registerNoteTools } from './tools/note.js';
 import { registerPackageTools } from './tools/packages.js';
 import { registerPppUserTools } from './tools/ppp-user.js';
-import { registerSetupTools } from './tools/setup.js';
+import { registerSetupTools, supportsWrite } from './tools/setup.js';
 import { registerSystemTools } from './tools/system.js';
 import type { DeviceTransport, ToolDeps } from './types/index.js';
 
@@ -118,10 +118,13 @@ function envFlag(value: string | undefined): boolean {
   return ['true', '1', 'yes', 'on'].includes(value.trim().toLowerCase());
 }
 
+let providerSummaryLogged = false;
+
 /**
  * Create and return a fully-wired MCP server.
  *
- * 1. Instantiates KeePass client from env vars and opens vault (fail-fast).
+ * 1. Instantiates the credential provider (KeePass, env or file) from env vars
+ *    and opens it (fail-fast).
  * 2. Instantiates REST transport (primary) and SSH transport (ros-command fallback).
  * 3. Registers all MCP tools.
  *
@@ -129,12 +132,17 @@ function envFlag(value: string | undefined): boolean {
  */
 export async function createServer(): Promise<McpServer> {
   // --- Dependencies ---
-  const keepassPath = process.env.KEEPASS_PATH ?? '/config/keepass.kdbx';
-  const keepassPassword = process.env.KEEPASS_PASSWORD ?? '';
-  const keepassGroup = process.env.KEEPASS_GROUP ?? 'mikrotik';
-
-  const keepass = new KeePassClientImpl(keepassPath, keepassPassword, keepassGroup);
-  await keepass.open(); // fail-fast: throws on bad password / missing vault
+  // fail-fast: throws on bad password, missing vault/file or invalid device list
+  const { kind, provider } = await createCredentialProvider(process.env);
+  if (!providerSummaryLogged) {
+    // HTTP transports build a server per session; summarize once, not per session.
+    providerSummaryLogged = true;
+    const deviceCount = (await provider.listDevices()).length;
+    process.stderr.write(
+      `[mikrotik-mcp] Credential provider: ${kind} (${deviceCount} device${deviceCount === 1 ? '' : 's'}` +
+        `${supportsWrite(provider) ? '' : ', read-only: setup-new-device withheld'})\n`,
+    );
+  }
 
   // REST is the primary transport for all structured commands
   const transport: DeviceTransport = new RestTransportImpl();
@@ -187,11 +195,11 @@ export async function createServer(): Promise<McpServer> {
     'device-list',
     {
       description:
-        'List all managed device IDs from the KeePass vault. Use this first to discover available targets before calling other tools.',
+        'List all managed device IDs from the configured credential source. Use this first to discover available targets before calling other tools.',
       inputSchema: {},
     },
     async () => {
-      const devices = await keepass.listDevices();
+      const devices = await provider.listDevices();
       const ids = devices.map((d) => ({
         deviceId: d.deviceId,
         hostname: d.hostname,
@@ -229,28 +237,28 @@ export async function createServer(): Promise<McpServer> {
       },
     },
     async ({ target, command }) => {
-      const deps: ToolDeps = { keepass, transport: sshTransport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport: sshTransport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => d.transport.raw(cred, command));
       return { content: [{ type: 'text' as const, text: JSON.stringify(results, null, 2) }] };
     },
   );
 
   // --- Section tools (all use REST transport) ---
-  registerSystemTools(server, keepass, transport);
-  registerHealthTools(server, keepass, transport);
-  registerPackageTools(server, keepass, transport);
-  registerNoteTools(server, keepass, transport);
-  registerLogTools(server, keepass, transport);
-  registerCertificateTools(server, keepass, transport);
-  registerInterfaceTools(server, keepass, transport);
-  registerBridgeTools(server, keepass, transport);
-  registerIpTools(server, keepass, transport);
-  registerFirewallTools(server, keepass, transport);
-  registerDhcpDnsTools(server, keepass, transport);
-  registerPppUserTools(server, keepass, transport);
-  registerAdminTools(server, keepass, transport);
-  registerDiagnosticTools(server, keepass, transport);
-  registerSetupTools(server, keepass, transport);
+  registerSystemTools(server, provider, transport);
+  registerHealthTools(server, provider, transport);
+  registerPackageTools(server, provider, transport);
+  registerNoteTools(server, provider, transport);
+  registerLogTools(server, provider, transport);
+  registerCertificateTools(server, provider, transport);
+  registerInterfaceTools(server, provider, transport);
+  registerBridgeTools(server, provider, transport);
+  registerIpTools(server, provider, transport);
+  registerFirewallTools(server, provider, transport);
+  registerDhcpDnsTools(server, provider, transport);
+  registerPppUserTools(server, provider, transport);
+  registerAdminTools(server, provider, transport);
+  registerDiagnosticTools(server, provider, transport);
+  registerSetupTools(server, provider, transport);
 
   return server;
 }

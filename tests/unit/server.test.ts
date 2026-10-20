@@ -18,6 +18,7 @@ vi.mock('../../src/keepass/keepass-client.js', () => ({
     open = mockOpen;
     listDevices = mockListDevices;
     resolveCredentials = mockResolveCredentials;
+    createEntry = vi.fn();
   },
 }));
 
@@ -61,7 +62,7 @@ describe('createServer', () => {
     expect(server).toBeInstanceOf(McpServer);
   });
 
-  it('calls keepass.open() at startup (fail-fast)', async () => {
+  it('calls provider.open() at startup (fail-fast)', async () => {
     await createServer();
     expect(mockOpen).toHaveBeenCalledOnce();
   });
@@ -102,6 +103,46 @@ describe('createServer', () => {
       // Password MUST NOT be present
       expect(parsed[0]).not.toHaveProperty('password');
       expect(parsed[1]).not.toHaveProperty('password');
+    });
+  });
+
+  describe('credential provider selection', () => {
+    const ENV_KEYS = ['CREDENTIAL_PROVIDER', 'DEVICE_HOST', 'DEVICE_PASSWORD', 'DEVICE_ID'];
+
+    afterEach(() => {
+      for (const key of ENV_KEYS) delete process.env[key];
+    });
+
+    it('serves devices from env vars and withholds setup-new-device', async () => {
+      process.env.CREDENTIAL_PROVIDER = 'env';
+      process.env.DEVICE_HOST = '192.0.2.10';
+      process.env.DEVICE_PASSWORD = 'env-secret';
+      process.env.DEVICE_ID = 'lab-router';
+
+      const server = await createServer();
+      const tools = (
+        server as unknown as {
+          _registeredTools: Record<string, { handler: (...args: unknown[]) => Promise<unknown> }>;
+        }
+      )._registeredTools;
+
+      expect(mockOpen).not.toHaveBeenCalled();
+      expect(tools).not.toHaveProperty('setup-new-device');
+
+      const result = (await tools['device-list'].handler({}, {})) as {
+        content: Array<{ text: string }>;
+      };
+      expect(JSON.parse(result.content[0].text)).toEqual([
+        { deviceId: 'lab-router', hostname: '192.0.2.10', username: 'admin' },
+      ]);
+      expect(result.content[0].text).not.toContain('env-secret');
+    });
+
+    it('registers setup-new-device with the KeePass provider', async () => {
+      const server = await createServer();
+      const tools = (server as unknown as { _registeredTools: Record<string, unknown> })
+        ._registeredTools;
+      expect(tools).toHaveProperty('setup-new-device');
     });
   });
 
@@ -319,7 +360,7 @@ describe('createServer', () => {
       const [deps, target, callback] = mockFanOut.mock.calls[0];
       expect(target).toBe('Router-01');
       expect(deps).toHaveProperty('sessionId');
-      expect(deps).toHaveProperty('keepass');
+      expect(deps).toHaveProperty('provider');
       expect(deps).toHaveProperty('transport');
       expect(typeof callback).toBe('function');
     });

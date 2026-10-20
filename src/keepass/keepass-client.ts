@@ -7,7 +7,7 @@ import { chmod, chown, readFile, rename, rm, stat, writeFile } from 'node:fs/pro
 import { basename, dirname, join } from 'node:path';
 import argon2 from 'argon2';
 import kdbxweb from 'kdbxweb';
-import type { CreateEntryParams, KeePassClient, KeePassCredential } from '../types/index.js';
+import type { CreateEntryParams, CredentialProvider, DeviceCredential } from '../types/index.js';
 
 // Configure Argon2 implementation for kdbxweb (required for KDBX4 vaults)
 kdbxweb.CryptoEngine.setArgon2Impl(
@@ -58,7 +58,7 @@ function serializeWrite<T>(vaultPath: string, task: () => Promise<T>): Promise<T
   return next;
 }
 
-export class KeePassClientImpl implements KeePassClient {
+export class KeePassClientImpl implements CredentialProvider {
   private readonly vaultPath: string;
   private readonly password: string;
   private readonly groupName: string;
@@ -81,13 +81,13 @@ export class KeePassClientImpl implements KeePassClient {
     this.validated = true;
   }
 
-  async listDevices(): Promise<KeePassCredential[]> {
+  async listDevices(): Promise<DeviceCredential[]> {
     this.ensureOpen();
     const { group } = await this.loadVaultAndGroup();
     return group.entries.map((entry) => this.entryToCredential(entry));
   }
 
-  async resolveCredentials(deviceId: string): Promise<KeePassCredential> {
+  async resolveCredentials(deviceId: string): Promise<DeviceCredential> {
     this.ensureOpen();
     const { group } = await this.loadVaultAndGroup();
 
@@ -264,7 +264,7 @@ export class KeePassClientImpl implements KeePassClient {
     return undefined;
   }
 
-  private entryToCredential(entry: kdbxweb.KdbxEntry): KeePassCredential {
+  private entryToCredential(entry: kdbxweb.KdbxEntry): DeviceCredential {
     return {
       deviceId: this.fieldToString(entry.fields.get('Title')),
       username: this.fieldToString(entry.fields.get('UserName')),

@@ -8,7 +8,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { fanOut } from '../fan-out.js';
 import { normalizeRecord, parseKeyValue } from '../parsers.js';
-import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
+import type { CredentialProvider, DeviceTransport, ToolDeps } from '../types/index.js';
 
 // Re-export for backward compatibility (tests may import from here)
 export { parseDetailRecords, parseKeyValue } from '../parsers.js';
@@ -34,7 +34,7 @@ export function parseClock(raw: string): Record<string, unknown> {
 /** Register system identity and clock tools on the MCP server. */
 export function registerSystemTools(
   server: McpServer,
-  keepass: KeePassClient,
+  provider: CredentialProvider,
   transport: DeviceTransport,
 ): void {
   // --- system-identity-get ---
@@ -47,7 +47,7 @@ export function registerSystemTools(
       },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         const records = await d.transport.query(cred, '/system/identity');
         return records[0] ?? {};
@@ -66,7 +66,7 @@ export function registerSystemTools(
       },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         const records = await d.transport.query(cred, '/system/clock');
         return records[0] ?? {};
