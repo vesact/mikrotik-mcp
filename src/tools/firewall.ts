@@ -8,7 +8,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { fanOut } from '../fan-out.js';
 import { normalizeRecord, parseDetailRecords, parseTabularRecords } from '../parsers.js';
-import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
+import type { CredentialProvider, DeviceTransport, ToolDeps } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Parsers — universal normalizeRecord passes ALL fields through
@@ -58,7 +58,7 @@ export function parseRadius(raw: string): Record<string, unknown>[] {
 
 export function registerFirewallTools(
   server: McpServer,
-  keepass: KeePassClient,
+  provider: CredentialProvider,
   transport: DeviceTransport,
 ): void {
   // --- firewall-filter-list ---
@@ -69,7 +69,7 @@ export function registerFirewallTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ip/firewall/filter');
       });
@@ -85,7 +85,7 @@ export function registerFirewallTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ip/firewall/nat');
       });
@@ -101,7 +101,7 @@ export function registerFirewallTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ip/firewall/mangle');
       });
@@ -117,7 +117,7 @@ export function registerFirewallTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ip/firewall/address-list');
       });
@@ -133,7 +133,7 @@ export function registerFirewallTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ip/firewall/connection');
       });
@@ -149,7 +149,7 @@ export function registerFirewallTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ip/service');
       });
@@ -165,7 +165,7 @@ export function registerFirewallTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/radius');
       });

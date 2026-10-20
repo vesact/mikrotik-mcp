@@ -8,7 +8,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { fanOut } from '../fan-out.js';
 import { normalizeRecord, parseDetailRecords } from '../parsers.js';
-import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
+import type { CredentialProvider, DeviceTransport, ToolDeps } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Parsers
@@ -45,7 +45,7 @@ export function parseNeighbors(raw: string): Record<string, unknown>[] {
 
 export function registerBridgeTools(
   server: McpServer,
-  keepass: KeePassClient,
+  provider: CredentialProvider,
   transport: DeviceTransport,
 ): void {
   server.registerTool(
@@ -57,7 +57,7 @@ export function registerBridgeTools(
       },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/interface/bridge');
       });
@@ -74,7 +74,7 @@ export function registerBridgeTools(
       },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/interface/bridge/port');
       });
@@ -91,7 +91,7 @@ export function registerBridgeTools(
       },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/interface/bridge/vlan');
       });
@@ -108,7 +108,7 @@ export function registerBridgeTools(
       },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/interface/bridge/host');
       });
@@ -125,7 +125,7 @@ export function registerBridgeTools(
       },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ip/neighbor');
       });

@@ -8,7 +8,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { fanOut } from '../fan-out.js';
 import { normalizeRecord, parseDetailRecords, parseKeyValue } from '../parsers.js';
-import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
+import type { CredentialProvider, DeviceTransport, ToolDeps } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Parsers
@@ -44,7 +44,7 @@ export function parseDnsStatic(raw: string): Record<string, unknown>[] {
 
 export function registerDhcpDnsTools(
   server: McpServer,
-  keepass: KeePassClient,
+  provider: CredentialProvider,
   transport: DeviceTransport,
 ): void {
   // --- dhcp-client-list ---
@@ -55,7 +55,7 @@ export function registerDhcpDnsTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ip/dhcp-client');
       });
@@ -71,7 +71,7 @@ export function registerDhcpDnsTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ip/dhcp-server');
       });
@@ -87,7 +87,7 @@ export function registerDhcpDnsTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ip/dhcp-server/lease');
       });
@@ -103,7 +103,7 @@ export function registerDhcpDnsTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ip/dhcp-server/network');
       });
@@ -119,7 +119,7 @@ export function registerDhcpDnsTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         const records = await d.transport.query(cred, '/ip/dns');
         return records[0] ?? {};
@@ -136,7 +136,7 @@ export function registerDhcpDnsTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/ip/dns/static');
       });

@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SshTransportImpl, type SshTransportOptions } from '../../../src/ssh/ssh-transport.js';
-import type { KeePassCredential } from '../../../src/types/index.js';
+import type { DeviceCredential } from '../../../src/types/index.js';
 import { SshError, SshHostKeyError, SshTimeoutError } from '../../../src/types/index.js';
 
 // --- Mock helpers ---
@@ -24,7 +24,7 @@ function createMockClient() {
 
 // --- Test data ---
 
-const testCredential: KeePassCredential = {
+const testCredential: DeviceCredential = {
   deviceId: 'Router-01',
   username: 'admin',
   password: 'super-secret-password-123',

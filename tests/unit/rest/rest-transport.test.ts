@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RestTransportImpl } from '../../../src/rest/rest-transport.js';
-import type { KeePassCredential } from '../../../src/types/index.js';
+import type { DeviceCredential } from '../../../src/types/index.js';
 import { RestError } from '../../../src/types/index.js';
 
-const credential: KeePassCredential = {
+const credential: DeviceCredential = {
   deviceId: 'router-1',
   username: 'admin',
   password: 's3cret!',

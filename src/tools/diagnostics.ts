@@ -9,7 +9,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { fanOut } from '../fan-out.js';
 import { normalizeRecord, parseDetailRecords } from '../parsers.js';
-import type { DeviceTransport, KeePassClient, ToolDeps } from '../types/index.js';
+import type { CredentialProvider, DeviceTransport, ToolDeps } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -106,7 +106,7 @@ export function parseNetwatch(raw: string): Record<string, unknown>[] {
 
 export function registerDiagnosticTools(
   server: McpServer,
-  keepass: KeePassClient,
+  provider: CredentialProvider,
   transport: DeviceTransport,
 ): void {
   // --- tools-ping ---
@@ -121,7 +121,7 @@ export function registerDiagnosticTools(
       },
     },
     async ({ target, address, count }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const c = count ?? '4';
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.execute(cred, '/ping', { address, count: c });
@@ -141,7 +141,7 @@ export function registerDiagnosticTools(
       },
     },
     async ({ target, address }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.execute(cred, '/tool/traceroute', {
           address,
@@ -170,7 +170,7 @@ export function registerDiagnosticTools(
       },
     },
     async ({ target, address, protocol, duration }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const args: Record<string, string> = { address };
       if (protocol) args.protocol = protocol;
       args.duration = clampDuration(duration ?? '10');
@@ -197,7 +197,7 @@ export function registerDiagnosticTools(
       },
     },
     async ({ target, interface: iface, duration }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const dur = clampDuration(duration ?? '5');
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.execute(cred, '/tool/torch', { interface: iface, duration: dur });
@@ -222,7 +222,7 @@ export function registerDiagnosticTools(
       },
     },
     async ({ target, interface: iface, duration }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const args: Record<string, string> = {};
       if (iface) args.interface = iface;
       args.duration = clampDuration(duration ?? '5');
@@ -248,7 +248,7 @@ export function registerDiagnosticTools(
       },
     },
     async ({ target, duration }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const dur = clampDuration(duration ?? '5');
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.execute(cred, '/tool/profile', { duration: dur });
@@ -265,7 +265,7 @@ export function registerDiagnosticTools(
       inputSchema: { target: z.string().describe("Device ID, comma-separated IDs, or 'all'") },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.query(cred, '/tool/netwatch');
       });
@@ -286,7 +286,7 @@ export function registerDiagnosticTools(
       },
     },
     async ({ target, url, dstPath }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const args: Record<string, string> = { url };
       if (dstPath) args['dst-path'] = dstPath;
       const results = await fanOut(deps, target, async (cred, d) => {
@@ -304,7 +304,7 @@ export function registerDiagnosticTools(
       inputSchema: { target: z.string().describe('Device ID') },
     },
     async ({ target }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.execute(cred, '/tool/speed-test', {});
       });
@@ -324,7 +324,7 @@ export function registerDiagnosticTools(
       },
     },
     async ({ target, mac, interface: iface }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const args: Record<string, string> = { mac };
       if (iface) args.interface = iface;
       const results = await fanOut(deps, target, async (cred, d) => {
@@ -351,7 +351,7 @@ export function registerDiagnosticTools(
       },
     },
     async ({ target, interface: iface, duration }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const dur = clampDuration(duration ?? '5');
       const results = await fanOut(deps, target, async (cred, d) => {
         return d.transport.execute(cred, '/tool/mac-scan', { interface: iface, duration: dur });
@@ -377,7 +377,7 @@ export function registerDiagnosticTools(
       },
     },
     async ({ target, addressRange, interface: iface, duration }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const dur = clampDuration(duration ?? '5');
       const args: Record<string, string> = { 'address-range': addressRange, duration: dur };
       if (iface) args.interface = iface;
@@ -401,7 +401,7 @@ export function registerDiagnosticTools(
       },
     },
     async ({ target, interface: iface, packetSize, mbps }) => {
-      const deps: ToolDeps = { keepass, transport, sessionId: randomUUID() };
+      const deps: ToolDeps = { provider, transport, sessionId: randomUUID() };
       const args: Record<string, string> = { interface: iface };
       if (packetSize) args['packet-size'] = packetSize;
       if (mbps) args.mbps = mbps;

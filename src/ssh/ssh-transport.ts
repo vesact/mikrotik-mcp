@@ -4,7 +4,7 @@
  */
 import { Client } from 'ssh2';
 import { parseDetailRecords, parseKeyValue } from '../parsers.js';
-import type { KeePassCredential, RosRecord, SshTransport } from '../types/index.js';
+import type { DeviceCredential, RosRecord, SshTransport } from '../types/index.js';
 import { SshError, SshHostKeyError, SshTimeoutError } from '../types/index.js';
 
 export interface SshTransportOptions {
@@ -31,7 +31,7 @@ export class SshTransportImpl implements SshTransport {
     this.acceptAllHostKeys = options?.acceptAllHostKeys ?? false;
   }
 
-  async executeCommand(credential: KeePassCredential, command: string): Promise<string> {
+  async executeCommand(credential: DeviceCredential, command: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const conn = this.clientFactory();
       let settled = false;
@@ -129,7 +129,7 @@ export class SshTransportImpl implements SshTransport {
   }
 
   /** Strip credential values from error messages to satisfy NFR-SEC-1. */
-  private sanitize(message: string, credential: KeePassCredential): string {
+  private sanitize(message: string, credential: DeviceCredential): string {
     let sanitized = message;
     if (credential.password) {
       sanitized = sanitized.replaceAll(credential.password, '[REDACTED]');
@@ -140,7 +140,7 @@ export class SshTransportImpl implements SshTransport {
     return sanitized;
   }
 
-  async query(credential: KeePassCredential, path: string): Promise<RosRecord[]> {
+  async query(credential: DeviceCredential, path: string): Promise<RosRecord[]> {
     const command = `${path}/print detail`;
     const raw = await this.executeCommand(credential, command);
     const records = parseDetailRecords(raw);
@@ -155,7 +155,7 @@ export class SshTransportImpl implements SshTransport {
   }
 
   async execute(
-    credential: KeePassCredential,
+    credential: DeviceCredential,
     path: string,
     args?: Record<string, string>,
   ): Promise<unknown> {
@@ -169,7 +169,7 @@ export class SshTransportImpl implements SshTransport {
   }
 
   async raw(
-    credential: KeePassCredential,
+    credential: DeviceCredential,
     command: string,
     body?: Record<string, string>,
   ): Promise<string> {

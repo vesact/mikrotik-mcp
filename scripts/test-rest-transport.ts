@@ -6,7 +6,7 @@
  *     npx tsx scripts/test-rest-transport.ts
  */
 import { RestTransportImpl } from '../src/rest/rest-transport.js';
-import type { KeePassCredential } from '../src/types/index.js';
+import type { DeviceCredential } from '../src/types/index.js';
 
 const { TEST_HOST, TEST_USER, TEST_PASSWORD } = process.env;
 
@@ -15,7 +15,7 @@ if (!TEST_HOST || !TEST_USER || !TEST_PASSWORD) {
   process.exit(1);
 }
 
-const cred: KeePassCredential = {
+const cred: DeviceCredential = {
   deviceId: 'test-router',
   username: TEST_USER,
   password: TEST_PASSWORD,

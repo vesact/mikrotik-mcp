@@ -2,7 +2,7 @@
  * REST transport layer — sole owner of HTTP connections to RouterOS devices.
  * No other module may use fetch against device IPs (architectural boundary).
  */
-import type { DeviceTransport, KeePassCredential, RosRecord } from '../types/index.js';
+import type { DeviceCredential, DeviceTransport, RosRecord } from '../types/index.js';
 import { RestError } from '../types/index.js';
 
 export interface RestTransportOptions {
@@ -31,7 +31,7 @@ export class RestTransportImpl implements DeviceTransport {
     this.fetchFn = options?.fetchFn ?? fetch;
   }
 
-  async query(credential: KeePassCredential, path: string): Promise<RosRecord[]> {
+  async query(credential: DeviceCredential, path: string): Promise<RosRecord[]> {
     const url = this.buildUrl(credential.hostname, path);
     const response = await this.request(credential, url, 'GET');
     const body = await response.json();
@@ -41,7 +41,7 @@ export class RestTransportImpl implements DeviceTransport {
   }
 
   async execute(
-    credential: KeePassCredential,
+    credential: DeviceCredential,
     path: string,
     args?: Record<string, string>,
     options?: { method?: 'PUT' | 'PATCH' | 'DELETE' | 'POST' },
@@ -59,7 +59,7 @@ export class RestTransportImpl implements DeviceTransport {
   }
 
   async raw(
-    credential: KeePassCredential,
+    credential: DeviceCredential,
     path: string,
     body?: Record<string, string>,
   ): Promise<string> {
@@ -87,7 +87,7 @@ export class RestTransportImpl implements DeviceTransport {
   }
 
   private async request(
-    credential: KeePassCredential,
+    credential: DeviceCredential,
     url: string,
     method: string,
     body?: Record<string, string>,
@@ -122,7 +122,7 @@ export class RestTransportImpl implements DeviceTransport {
     return response;
   }
 
-  private handleNetworkError(credential: KeePassCredential, err: unknown): RestError {
+  private handleNetworkError(credential: DeviceCredential, err: unknown): RestError {
     const message = err instanceof Error ? err.message : String(err);
     const sanitized = this.sanitize(message, credential);
 
@@ -133,7 +133,7 @@ export class RestTransportImpl implements DeviceTransport {
     return new RestError(credential.deviceId, 0, sanitized);
   }
 
-  private async handleHttpError(credential: KeePassCredential, response: Response): Promise<never> {
+  private async handleHttpError(credential: DeviceCredential, response: Response): Promise<never> {
     let detail: string;
     try {
       const body = await response.json();
@@ -149,7 +149,7 @@ export class RestTransportImpl implements DeviceTransport {
   }
 
   /** Strip credential values from error messages (NFR-SEC-1). */
-  private sanitize(message: string, credential: KeePassCredential): string {
+  private sanitize(message: string, credential: DeviceCredential): string {
     let sanitized = message;
     if (credential.password) {
       sanitized = sanitized.replaceAll(credential.password, '[REDACTED]');

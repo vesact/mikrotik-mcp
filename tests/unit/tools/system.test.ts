@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { KeePassClient, ToolDeps } from '../../../src/types/index.js';
+import type { CredentialProvider, ToolDeps } from '../../../src/types/index.js';
 
 // --- Hoisted mock fns ---
 
@@ -130,7 +130,7 @@ describe('parseClock', () => {
 
 describe('registerSystemTools', () => {
   let server: McpServer;
-  let mockKeepass: KeePassClient;
+  let mockKeepass: CredentialProvider;
   let mockTransport: DeviceTransport;
 
   beforeEach(() => {

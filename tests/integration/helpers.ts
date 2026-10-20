@@ -2,7 +2,7 @@
  * Integration test helpers — create a real transport connected to test devices.
  */
 import { RestTransportImpl } from '../../src/rest/rest-transport.js';
-import type { DeviceTransport, KeePassCredential, RosRecord } from '../../src/types/index.js';
+import type { DeviceCredential, DeviceTransport, RosRecord } from '../../src/types/index.js';
 import type { TestDevice } from './config.js';
 
 /** Create a transport instance configured for a test device. */
@@ -14,8 +14,8 @@ export function createTransport(device: TestDevice): DeviceTransport {
   });
 }
 
-/** Create a KeePassCredential-like object from a test device. */
-export function toCredential(device: TestDevice): KeePassCredential {
+/** Create a DeviceCredential-like object from a test device. */
+export function toCredential(device: TestDevice): DeviceCredential {
   return {
     deviceId: device.id,
     username: device.user,

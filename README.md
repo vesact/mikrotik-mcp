@@ -6,13 +6,13 @@
 
 An [MCP](https://modelcontextprotocol.io) (Model Context Protocol) server for managing fleets of [MikroTik RouterOS](https://mikrotik.com/software) devices from AI assistants such as Claude.
 
-It exposes **65 tools** covering system administration, interfaces, bridging, IP, firewall, DHCP/DNS, PPP, monitoring, and diagnostics — all executed over the RouterOS **REST API**, with SSH reserved for free-form `ros-command` execution. Device credentials are never passed through the model: they are resolved from a **KeePass vault** at runtime.
+It exposes **65 tools** covering system administration, interfaces, bridging, IP, firewall, DHCP/DNS, PPP, monitoring, and diagnostics — all executed over the RouterOS **REST API**, with SSH reserved for free-form `ros-command` execution. Device credentials are never passed through the model: they are resolved at runtime from a **KeePass vault**, environment variables, or a JSON inventory file.
 
 ## Highlights
 
 - **Fleet-aware by design** — every tool accepts a `target` of a single device ID, a comma-separated list (`R1,R2,R3`), or `all`. Commands fan out in parallel and return per-device results; one unreachable device never fails the batch.
 - **REST-first transport** — structured JSON from the RouterOS REST API (RouterOS v7.1+), no brittle terminal scraping. SSH is used only for the `ros-command` escape hatch.
-- **KeePass-backed credentials** — devices are enumerated from a `.kdbx` vault group. The LLM only ever sees device IDs, never passwords.
+- **Pluggable credential sources** — devices come from a KeePass `.kdbx` vault group, from environment variables, or from a JSON file. The LLM only ever sees device IDs, never passwords.
 - **Enforced read-only mode** — `READ_ONLY=true` withholds all 14 write/execution and active-diagnostic tools at the protocol level, exposing only the 51 state-query tools. Ideal for monitoring-only agent access. Approval of individual write calls is left to the MCP client, which is where it can actually be enforced (see [Write operations and approval](#write-operations-and-approval)).
 - **Two MCP transports** — `stdio` for local clients (Claude Desktop, Claude Code) and Streamable HTTP (with legacy SSE fallback) for a shared team server.
 
@@ -32,9 +32,34 @@ It exposes **65 tools** covering system administration, interfaces, bridging, IP
 
 ## Quick start
 
-### 1. Prepare the credential vault
+### 1. Tell the server about your devices
 
-Create a KeePass vault (e.g. `config/vault.kdbx`) with one entry per device inside a group (default: `mikrotik`):
+Pick one credential source. The server infers it from the variables you set, or you can name it with `CREDENTIAL_PROVIDER=keepass|env|file`.
+
+**Trying it on one router: environment variables.** No file needed:
+
+```bash
+docker run -d -p 8000:8000 \
+  -e DEVICE_HOST=192.0.2.1 -e DEVICE_PASSWORD='…' \
+  ghcr.io/vesact/mikrotik-mcp:latest
+```
+
+`DEVICE_USER` defaults to `admin` and `DEVICE_ID` to the host. For a few devices, set `DEVICES` to a JSON array instead, in the same format as the file below.
+
+**An inventory rendered by a secret injector: a JSON file.** Point `DEVICES_FILE` at it:
+
+```json
+[
+  { "id": "router-01", "host": "192.0.2.1", "password": "…" },
+  { "id": "router-02", "host": "192.0.2.2", "user": "ops", "password": "…", "notes": "rack 4" }
+]
+```
+
+The file is re-read on every tool call, so edits apply without a restart.
+
+Both of these are read-only, so `setup-new-device` is not exposed with them: there would be nowhere to store the password it generates.
+
+**A team fleet: a KeePass vault.** Create a vault (e.g. `config/vault.kdbx`) with one entry per device inside a group (default: `mikrotik`):
 
 - **Title** → device ID (how you'll refer to the device in prompts)
 - **Username / Password** → RouterOS credentials
@@ -50,7 +75,7 @@ If the vault can't be written, `setup-new-device` resets the device's admin pass
 
 ### 2. Run with Docker (shared HTTP server)
 
-Using the prebuilt image:
+With a KeePass vault, using the prebuilt image:
 
 ```bash
 docker run -d -p 8000:8000 \
@@ -99,9 +124,14 @@ All configuration is via environment variables (see [`.env.example`](.env.exampl
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `KEEPASS_PASSWORD` | — (required) | Master password of the KeePass vault |
+| `CREDENTIAL_PROVIDER` | _(inferred)_ | `keepass`, `env` or `file`. Inferred from the variables below; required only when several sources are configured |
+| `KEEPASS_PASSWORD` | — | Master password of the KeePass vault (selects `keepass`) |
 | `KEEPASS_PATH` | `/config/keepass.kdbx` | Path to the `.kdbx` vault file |
 | `KEEPASS_GROUP` | `mikrotik` | Vault group to enumerate devices from |
+| `DEVICE_HOST` / `DEVICE_PASSWORD` | — | Single device (selects `env`) |
+| `DEVICE_USER` / `DEVICE_ID` / `DEVICE_NOTES` | `admin` / the host / — | Optional fields of that device |
+| `DEVICES` | — | JSON array of devices (selects `env`) |
+| `DEVICES_FILE` | — | Path to a JSON array of devices (selects `file`) |
 | `ROUTEROS_REST_PORT` | `443` | REST API port on target devices |
 | `ROUTEROS_REST_SCHEME` | `https` | `https` or `http` |
 | `ROUTEROS_TIMEOUT_MS` | `10000` | REST request timeout |
@@ -161,7 +191,8 @@ Unit tests run against fixtures, including a committed test vault (`tests/fixtur
 MCP client (Claude, …)
    │  stdio / Streamable HTTP
    ▼
-mikrotik-mcp server ──► KeePass vault (device inventory + credentials)
+mikrotik-mcp server ──► credential provider: KeePass vault | env vars | JSON file
+   │                       (device inventory + credentials)
    │
    │  fan-out: target = "R1" | "R1,R2" | "all"   (parallel, per-device results)
    ▼

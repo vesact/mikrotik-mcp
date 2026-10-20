@@ -142,6 +142,12 @@ npx @modelcontextprotocol/create-server mikrotik-mcp
 
 ### Device Registry
 
+> **Since 2.2:** the registry sits behind a `CredentialProvider` interface
+> (`src/types/index.ts`), selected at startup by `src/credentials/index.ts`:
+> `keepass` (default, described below, the only writable one), `env` (`DEVICE_*` or
+> `DEVICES`) and `file` (`DEVICES_FILE`, JSON). `setup-new-device` is registered only
+> when the provider can write.
+
 - **Source:** KeePass vault — no static config file
 - **Group:** Configurable via `KEEPASS_GROUP` env var; default `mikrotik`
 - **Field mapping:**
