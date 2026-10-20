@@ -2,7 +2,9 @@
  * KeePass credential client — resolves device credentials from a .kdbx vault.
  * This is the SOLE owner of vault access per architecture boundaries.
  */
-import { readFile, writeFile } from 'node:fs/promises';
+import { createHash, randomBytes } from 'node:crypto';
+import { chmod, chown, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { basename, dirname, join } from 'node:path';
 import argon2 from 'argon2';
 import kdbxweb from 'kdbxweb';
 import type { CreateEntryParams, KeePassClient, KeePassCredential } from '../types/index.js';
@@ -32,6 +34,29 @@ kdbxweb.CryptoEngine.setArgon2Impl(
       })
       .then((buf: Buffer) => new Uint8Array(buf).buffer as ArrayBuffer),
 );
+
+/** How many times createEntry re-reads the vault when another writer changed it. */
+const MAX_WRITE_ATTEMPTS = 3;
+
+/** errno codes where rename-over cannot replace the vault (e.g. a single-file bind mount). */
+const RENAME_UNSUPPORTED = new Set(['EBUSY', 'EXDEV', 'EPERM']);
+
+/**
+ * Pending write per vault path. Writers in this process queue behind each other,
+ * so the fingerprint check only has to catch writers outside the process.
+ */
+const writeQueues = new Map<string, Promise<unknown>>();
+
+function serializeWrite<T>(vaultPath: string, task: () => Promise<T>): Promise<T> {
+  const previous = writeQueues.get(vaultPath) ?? Promise.resolve();
+  const next = previous.then(task, task);
+  const settled = next.catch(() => undefined);
+  writeQueues.set(vaultPath, settled);
+  void settled.then(() => {
+    if (writeQueues.get(vaultPath) === settled) writeQueues.delete(vaultPath);
+  });
+  return next;
+}
 
 export class KeePassClientImpl implements KeePassClient {
   private readonly vaultPath: string;
@@ -78,31 +103,100 @@ export class KeePassClientImpl implements KeePassClient {
     return this.entryToCredential(entry);
   }
 
+  /**
+   * Adds an entry and saves the vault. The whole file is rewritten, so three
+   * guards keep concurrent writers from losing each other's changes:
+   * - writes from this process run one at a time (serializeWrite);
+   * - optimistic check against other processes (e.g. a desktop KeePass): if
+   *   the file changed between our read and our write, the entry is re-applied
+   *   on top of the fresh copy (up to MAX_WRITE_ATTEMPTS);
+   * - atomic replace: the new vault goes to a temp file that is renamed over
+   *   the original, so readers never see a half-written file.
+   */
   async createEntry(params: CreateEntryParams): Promise<void> {
     this.ensureOpen();
-    const { db, group } = await this.loadVaultAndGroup();
+    await serializeWrite(this.vaultPath, () => this.writeEntry(params));
+  }
 
-    // Prevent duplicate entries
-    const existing = group.entries.find(
-      (e) => this.fieldToString(e.fields.get('Title')) === params.deviceId,
-    );
-    if (existing) {
-      throw new Error(
-        `Entry "${params.deviceId}" already exists in KeePass group "${this.groupName}"`,
+  private async writeEntry(params: CreateEntryParams): Promise<void> {
+    for (let attempt = 1; attempt <= MAX_WRITE_ATTEMPTS; attempt++) {
+      const raw = await this.readVaultFile();
+      const { db, group } = await this.parseVault(raw);
+
+      // Prevent duplicate entries
+      const existing = group.entries.find(
+        (e) => this.fieldToString(e.fields.get('Title')) === params.deviceId,
       );
+      if (existing) {
+        throw new Error(
+          `Entry "${params.deviceId}" already exists in KeePass group "${this.groupName}"`,
+        );
+      }
+
+      const entry = db.createEntry(group);
+      entry.fields.set('Title', params.deviceId);
+      entry.fields.set('UserName', params.username);
+      entry.fields.set('Password', kdbxweb.ProtectedValue.fromString(params.password));
+      entry.fields.set('URL', params.hostname);
+      if (params.notes) {
+        entry.fields.set('Notes', params.notes);
+      }
+
+      const saved = Buffer.from(await db.save());
+
+      // Saving runs the KDF and can take a second; someone may have saved meanwhile.
+      const current = await this.readVaultFile();
+      if (fingerprint(current) !== fingerprint(raw)) continue;
+
+      await this.replaceVaultFile(saved);
+      return;
     }
 
-    const entry = db.createEntry(group);
-    entry.fields.set('Title', params.deviceId);
-    entry.fields.set('UserName', params.username);
-    entry.fields.set('Password', kdbxweb.ProtectedValue.fromString(params.password));
-    entry.fields.set('URL', params.hostname);
-    if (params.notes) {
-      entry.fields.set('Notes', params.notes);
+    throw new Error(
+      `KeePass vault kept changing during ${MAX_WRITE_ATTEMPTS} write attempts; entry "${params.deviceId}" was not saved`,
+    );
+  }
+
+  /** Writes to a sibling temp file, then renames it over the vault. */
+  private async replaceVaultFile(data: Buffer): Promise<void> {
+    const tmpPath = join(
+      dirname(this.vaultPath),
+      `.${basename(this.vaultPath)}.${randomBytes(6).toString('hex')}.tmp`,
+    );
+
+    try {
+      await writeFile(tmpPath, data, { flag: 'wx' });
+    } catch {
+      // Directory not writable for a temp file: fall back to an in-place write.
+      await writeFile(this.vaultPath, data);
+      return;
     }
 
-    const arrayBuffer = await db.save();
-    await writeFile(this.vaultPath, Buffer.from(arrayBuffer));
+    try {
+      // Keep the owner and mode, so a desktop KeePass or a share mapped to that
+      // owner can still save the file after a container running as root wrote it.
+      const { mode, uid, gid } = await stat(this.vaultPath);
+      const tmp = await stat(tmpPath);
+      if (tmp.uid !== uid || tmp.gid !== gid) {
+        try {
+          await chown(tmpPath, uid, gid);
+        } catch {
+          await rm(tmpPath, { force: true });
+          await writeFile(this.vaultPath, data);
+          return;
+        }
+      }
+      await chmod(tmpPath, mode);
+      await rename(tmpPath, this.vaultPath);
+    } catch (err) {
+      await rm(tmpPath, { force: true });
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code && RENAME_UNSUPPORTED.has(code)) {
+        await writeFile(this.vaultPath, data);
+        return;
+      }
+      throw err;
+    }
   }
 
   private ensureOpen(): void {
@@ -117,25 +211,32 @@ export class KeePassClientImpl implements KeePassClient {
    * Returns both the database handle (needed for writes) and the target group.
    */
   private async loadVaultAndGroup(): Promise<{ db: kdbxweb.Kdbx; group: kdbxweb.KdbxGroup }> {
+    return this.parseVault(await this.readVaultFile());
+  }
+
+  private async readVaultFile(): Promise<Buffer> {
     if (!this.password) {
       throw new Error('KeePass vault password is required but was not provided');
     }
 
-    let data: ArrayBuffer;
     try {
-      const buffer = await readFile(this.vaultPath);
-      data = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+      return await readFile(this.vaultPath);
     } catch {
       throw new Error(
         `KeePass vault file not accessible at configured path. Verify KEEPASS_PATH is correct.`,
       );
     }
+  }
 
+  private async parseVault(
+    buffer: Buffer,
+  ): Promise<{ db: kdbxweb.Kdbx; group: kdbxweb.KdbxGroup }> {
+    const data = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
     const credentials = new kdbxweb.Credentials(kdbxweb.ProtectedValue.fromString(this.password));
 
     let db: kdbxweb.Kdbx;
     try {
-      db = await kdbxweb.Kdbx.load(data, credentials);
+      db = await kdbxweb.Kdbx.load(data as ArrayBuffer, credentials);
     } catch {
       throw new Error('Failed to open KeePass vault. Verify the vault password is correct.');
     }
@@ -180,4 +281,8 @@ export class KeePassClientImpl implements KeePassClient {
     }
     return String(value);
   }
+}
+
+function fingerprint(data: Buffer): string {
+  return createHash('sha256').update(data).digest('hex');
 }

@@ -2,7 +2,8 @@
  * Device setup tool — bootstraps a freshly cloned MikroTik CHR VM.
  * Sets identity, generates a secure password, optionally relocates the HTTP API
  * to a configured port, and stores credentials in KeePass.
- * Password never leaves the server.
+ * Password never leaves the server (it reaches the server log only if both the
+ * KeePass write and the rollback of the device password fail).
  */
 
 import { randomBytes } from 'node:crypto';
@@ -141,24 +142,28 @@ async function setupDevice(
   }
 
   // --- Step 5: Set admin password (target port, still no password) ---
+  let adminId: string;
   try {
     const users = await target.query(noPassCred, '/user');
     const admin = users.find((u) => u.name === 'admin');
     if (!admin?.['.id']) {
       return fail('password', new Error('admin user entry not found'), true);
     }
+    adminId = admin['.id'];
 
-    await target.execute(
-      noPassCred,
-      '/user/set',
-      { '.id': admin['.id'], password },
-      { method: 'POST' },
-    );
+    await target.execute(noPassCred, '/user/set', { '.id': adminId, password }, { method: 'POST' });
   } catch (err) {
     return fail('password', err, true);
   }
 
   // --- Step 6: Store credentials in KeePass ---
+  const newCred: KeePassCredential = {
+    deviceId: identity,
+    username: 'admin',
+    password,
+    hostname: ip,
+    notes: notes ?? '',
+  };
   try {
     await keepass.createEntry({
       deviceId: identity,
@@ -168,19 +173,40 @@ async function setupDevice(
       notes,
     });
   } catch (err) {
-    // Non-trivially-recoverable: password IS set on the device but NOT in
-    // KeePass. Operator must record the credentials manually.
-    return fail('keepass', err, false);
+    // The password is set on the device but not stored anywhere. Put the
+    // device back to an empty admin password so the operator can fix the
+    // vault and simply re-run setup.
+    try {
+      await target.execute(
+        newCred,
+        '/user/set',
+        { '.id': adminId, password: '' },
+        { method: 'POST' },
+      );
+    } catch {
+      // Last resort: the server log is the only place left that can hold the
+      // password without sending it to the MCP client.
+      process.stderr.write(
+        `[mikrotik-mcp] setup-new-device: KeePass write and password rollback both failed for ${identity} (${ip}); admin password: ${password}\n`,
+      );
+      return fail(
+        'keepass',
+        new Error(
+          `${err instanceof Error ? err.message : String(err)}. Rolling back the admin password also failed; the password was written to the server log.`,
+        ),
+        false,
+      );
+    }
+    return fail(
+      'keepass',
+      new Error(
+        `${err instanceof Error ? err.message : String(err)}. The admin password was reset to empty; fix the vault and re-run setup.`,
+      ),
+      true,
+    );
   }
 
   // --- Step 7: Verify with new credentials on the target port ---
-  const newCred: KeePassCredential = {
-    deviceId: identity,
-    username: 'admin',
-    password,
-    hostname: ip,
-    notes: notes ?? '',
-  };
   try {
     await target.query(newCred, '/system/identity');
   } catch (err) {

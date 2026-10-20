@@ -29,8 +29,8 @@ Bandwidth Test, Torch, Packet Sniffer, Fetch, WoL, Traffic Generator), and Reboo
   modules; device registry human-editable without tooling
 - **Observability:** Structured logs to stderr; session ID traces through runtime logs and
   audit log end-to-end
-- **Deployment:** Single `docker-compose up`; no credentials in image; KeePass file as
-  read-only volume mount
+- **Deployment:** Single `docker-compose up`; no credentials in image; KeePass directory as
+  a volume mount (read-write for `setup-new-device`)
 
 **Scale & Complexity:**
 
@@ -45,7 +45,7 @@ Bandwidth Test, Torch, Packet Sniffer, Fetch, WoL, Traffic Generator), and Reboo
 - **SSH:** `ssh2` library — RouterOS 7+ only (v6 explicitly out of scope)
 - **KeePass:** `kdbxweb` — `.kdbx` format, master password via `KEEPASS_PASSWORD` env var
 - **MCP SDK:** `@modelcontextprotocol/sdk` — both stdio and HTTP/SSE transports
-- **Deployment:** Docker + docker-compose; KeePass `.kdbx` mounted read-only as volume
+- **Deployment:** Docker + docker-compose; KeePass `.kdbx` directory mounted as a volume (read-write for `setup-new-device`, read-only otherwise)
 - **Test target:** Real RouterOS 7 hardware required for integration tests
 - **No persistent connections:** One SSH session per command; no pooling in MVP
 
@@ -157,7 +157,7 @@ npx @modelcontextprotocol/create-server mikrotik-mcp
 ### Infrastructure & Deployment
 
 - **Transports:** stdio (local) + HTTP/SSE (shared team server)
-- **Deployment:** Docker + docker-compose; KeePass `.kdbx` mounted read-only as volume
+- **Deployment:** Docker + docker-compose; KeePass `.kdbx` directory mounted as a volume (read-write for `setup-new-device`, read-only otherwise)
 - **Credentials:** `KEEPASS_PASSWORD` + `KEEPASS_GROUP` env vars; nothing else in image
 - **No auth layer in MVP:** deployment-trust model (documented constraint)
 
@@ -242,7 +242,7 @@ mikrotik-mcp/
 ├── README.md
 │
 ├── config/
-│   └── keepass.kdbx              # mounted as read-only volume at runtime (not committed)
+│   └── keepass.kdbx              # mounted as a volume at runtime (not committed)
 │
 ├── src/
 │   ├── index.ts                  # entry point — selects transport (stdio or HTTP/SSE)

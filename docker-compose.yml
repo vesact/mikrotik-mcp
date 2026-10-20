@@ -15,5 +15,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./config:/config:ro
+      # Read-write so setup-new-device can store new credentials.
+      # Add :ro if you run with READ_ONLY=true.
+      - ./config:/config
     restart: unless-stopped

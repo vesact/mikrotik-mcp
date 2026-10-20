@@ -352,7 +352,7 @@ describe('registerSetupTools', () => {
       expect(parsed.recoverable).toBe(true);
     });
 
-    it('step 6 (keepass) — returns NON-recoverable failure', async () => {
+    it('step 6 (keepass) — rolls the admin password back and returns recoverable failure', async () => {
       registerSetupTools(server, mockKeepass, mockTransport);
       const handler = getHandler(server);
 
@@ -364,13 +364,51 @@ describe('registerSetupTools', () => {
       mockTargetExecute.mockResolvedValueOnce(undefined); // step 5b
       // Step 6 fails
       mockCreateEntry.mockRejectedValueOnce(new Error('Vault write failed'));
+      mockTargetExecute.mockResolvedValueOnce(undefined); // rollback
 
       const result = await handler({ ip: '192.0.2.95', identity: 'chr-95' }, {});
       const parsed = JSON.parse(result.content[0].text);
 
       expect(parsed.success).toBe(false);
       expect(parsed.stage).toBe('keepass');
+      expect(parsed.recoverable).toBe(true);
+      expect(parsed.error).toContain('reset to empty');
+
+      // Rollback authenticates with the new password and clears it
+      const [cred, path, params] = mockTargetExecute.mock.calls[1] as [
+        { password: string },
+        string,
+        Record<string, string>,
+      ];
+      expect(path).toBe('/user/set');
+      expect(cred.password).toHaveLength(40);
+      expect(params).toEqual({ '.id': '*1', password: '' });
+    });
+
+    it('step 6 (keepass) — logs the password server-side when the rollback also fails', async () => {
+      registerSetupTools(server, mockKeepass, mockTransport);
+      const handler = getHandler(server);
+      const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+      mockPort80Query.mockResolvedValueOnce([{ name: 'MikroTik' }]); // step 1
+      mockPort80Execute.mockResolvedValueOnce(undefined); // step 3
+      mockPort80Query.mockResolvedValueOnce([{ '.id': '*2', name: 'www', port: '80' }]); // step 4a
+      mockPort80Execute.mockResolvedValueOnce(undefined); // step 4b
+      mockTargetQuery.mockResolvedValueOnce([{ '.id': '*1', name: 'admin' }]); // step 5a
+      mockTargetExecute.mockResolvedValueOnce(undefined); // step 5b
+      mockCreateEntry.mockRejectedValueOnce(new Error('Vault write failed')); // step 6
+      mockTargetExecute.mockRejectedValueOnce(new Error('Connection reset')); // rollback
+
+      const result = await handler({ ip: '192.0.2.95', identity: 'chr-95' }, {});
+      const parsed = JSON.parse(result.content[0].text);
+      const password = (mockTargetExecute.mock.calls[1][0] as { password: string }).password;
+      const logged = stderr.mock.calls.map(([line]) => String(line));
+      stderr.mockRestore();
+
+      expect(parsed.stage).toBe('keepass');
       expect(parsed.recoverable).toBe(false);
+      expect(result.content[0].text).not.toContain(password);
+      expect(logged.some((line) => line.includes(password))).toBe(true);
     });
 
     it('step 7 (verify) — returns non-recoverable failure', async () => {
@@ -413,6 +451,7 @@ describe('registerSetupTools', () => {
       mockCreateEntry.mockImplementationOnce(async (params: { password: string }) => {
         throw new Error(`Failed to write vault with password ${params.password}`);
       });
+      mockTargetExecute.mockResolvedValueOnce(undefined); // rollback
 
       const result = await handler({ ip: '192.0.2.95', identity: 'chr-95' }, {});
       const responseText = result.content[0].text;
