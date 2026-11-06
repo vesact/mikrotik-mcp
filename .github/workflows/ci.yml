@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Matrix legs report as "test-matrix (22)" / "test-matrix (24)". Branch
+  # Matrix legs report as "test-matrix (26)". Branch
   # protection requires a stable check name, so the `test` job below
   # aggregates them — adding or dropping a Node version never needs a
   # change to the protection rules.
@@ -17,9 +17,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Lowest version allowed by package.json engines, plus the active LTS
-        # the Docker image ships.
-        node-version: [24, 26]
+        # Lowest version allowed by package.json engines. It is also the
+        # active LTS the Docker image ships, so one leg covers both.
+        node-version: [26]
     steps:
       - uses: actions/checkout@v7
 
