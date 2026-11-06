@@ -168,7 +168,7 @@ Two server-side controls remain, because they are enforcement rather than instru
 
 ## Requirements
 
-- Node.js ≥ 24 (or Docker)
+- Node.js ≥ 26 (or Docker)
 - RouterOS v7.1+ with the REST API enabled (`www-ssl` or `www` service) on managed devices
 - SSH enabled on devices only if you use `ros-command` or `setup-new-device`
 
